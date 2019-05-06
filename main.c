@@ -74,33 +74,11 @@ void serial_initialize() {
 void *serial_listen(void *vargp)
 {
     while(true) {
-        unsigned long now = (unsigned long)time(NULL);
-        if (!ftime(&timer_msec)) {
-            timestamp_msec = ((long long int) timer_msec.time) * 1000ll + (long long int) timer_msec.millitm;
-        }
-        else {
-            timestamp_msec = -1;
-        }
-        
-        
         tcflush(fd, TCIFLUSH);
         bytes_read = 0;
         char read_buffer[pkt_size];
         bytes_read = read(fd,&read_buffer,pkt_size);
-        
-        /*tlm_sct* tlm = (tlm_sct*)read_buffer;
-         ts = localtime( &tlm->unix_time );
-         strftime(buff, sizeof(buff), "%Y-%m-%d %H:%M:%S   ", ts);*/
-        
-        //printf("%d     %d %.9f %.9f %d %s \n", now, tlm->sat_n, tlm->latitud, tlm->longitud, tlm->unix_time, buff);
-        
-        
-        t_n =timestamp_msec;
-        t_d = t_n- t_o;
-        printf("%lld ",t_d);
-        t_o = t_n;
-        
-        printf("%d %d %d %d %d \n", now, bytes_read, read_buffer[0], read_buffer[1], read_buffer[2]);
+        printf("%d %d %d %d \n",  bytes_read, read_buffer[0], read_buffer[1], read_buffer[2]);
         
         UDP_ssend(&read_buffer,bytes_read);
         
@@ -117,7 +95,7 @@ void *serial_listen(void *vargp)
             }
             if(read_buffer[0] == 56 || read_buffer[0] == 1 || read_buffer[0] == 1) {
                 char str[11];
-                sprintf(str, "%d.png", now);
+                sprintf(str, "%lu.png", (unsigned long)time(NULL));
                 fo = open(str,O_WRONLY | O_CREAT | O_TRUNC | O_APPEND, 0666 );//| O_NDELAY);
                 if(fo == -1)
                     printf("\n  Error! in Opening file  ");
@@ -130,13 +108,10 @@ void *UDP_listener(void *vargp)
 {
     while(true) {
         len = sizeof(cliaddr); 
-        int ne = recvfrom(sockfd, udp_buffer, sizeof(udp_buffer), 0, (struct sockaddr*)&cliaddr,&len); //receive message from server 
-        printf("%d \n",ne);
+        int ne = recvfrom(sockfd, udp_buffer, sizeof(udp_buffer), 0, (struct sockaddr*)&cliaddr,&len); 
         if(ne>0) {
-            if(true) {
                 for(int n =0 ; n<ne;n++) printf("%d ", udp_buffer[n]);
                 printf("\n");
-            }
         }
     }
 }
@@ -144,7 +119,6 @@ long long current_timestamp() {
     struct timeval te;
     gettimeofday(&te, NULL); // get current time
     long long milliseconds = te.tv_sec*1000LL + te.tv_usec/1000; 
-    //printf("milliseconds: %lld\n", milliseconds);
     return milliseconds;
 }
 
@@ -161,7 +135,7 @@ void socket_initialize() {
     if ( bind(sockfd, (const struct sockaddr *)&servaddr, sizeof(servaddr)) < 0 )
     {
         perror("bind failed");
-        //exit(EXIT_FAILURE);
+        exit(EXIT_FAILURE);
     }
 }
 
