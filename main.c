@@ -28,18 +28,17 @@
 #define pkt_size  255
 #define diff_size 1
 #define MAXLINE 1024
-#define sat_port     7070
-#define serv_port    7071
+#define serv_port    6070
 
-int fd, fo, bytes_read, sockfd;
+int fd, fo, bytes_read, sockfd, len;
 struct  tm *ts;
-char    buff[80];
+char udp_buffer[MAXLINE];
 bool serial_raw = false;
 pthread_t serial, udp_thread;
 struct timeb timer_msec;
 long long int timestamp_msec, t_o, t_n, t_d;
-unsigned char udp_buffer[MAXLINE];
-struct sockaddr_in servaddr, cliaddr;
+char udp_buffer[MAXLINE];
+struct sockaddr_in servaddr, cliaddr, rx_addr;
 
 typedef struct {
     int id;
@@ -127,64 +126,38 @@ void *serial_listen(void *vargp)
     }
     return NULL;
 }
-
-int main(void)
-{
-    serial_initialize();
-    socket_initialize();
-    UDP_ssend();
-    //pthread_create(&udp_thread, NULL, UDP_listener, NULL);
-    pthread_create(&serial, NULL, serial_listen, NULL);         //creation of the thread that contains the serial communication
-    pthread_join(serial, NULL);
-    
-    close(fd);
-}
-
-long long current_timestamp() {
-    struct timeval te;
-    gettimeofday(&te, NULL); // get current time
-    long long milliseconds = te.tv_sec*1000LL + te.tv_usec/1000; // calculate milliseconds
-    // printf("milliseconds: %lld\n", milliseconds);
-    return milliseconds;
-}
-
 void *UDP_listener(void *vargp)
 {
     while(true) {
-        int recved;
-        socklen_t len;
-        recved = recvfrom(sockfd, (char *)udp_buffer, MAXLINE, MSG_WAITALL, ( struct sockaddr *) &cliaddr, &len);
-        printf("%d \n",recved);
-        write(fo,udp_buffer,recved);
-        if(recved>0) {
+        len = sizeof(cliaddr); 
+        int ne = recvfrom(sockfd, udp_buffer, sizeof(udp_buffer), 0, (struct sockaddr*)&cliaddr,&len); //receive message from server 
+        printf("%d \n",ne);
+        if(ne>0) {
             if(true) {
-                for(int n =0 ; n<recved;n++) printf("%d ", udp_buffer[n]);
+                for(int n =0 ; n<ne;n++) printf("%d ", udp_buffer[n]);
                 printf("\n");
-            }
-            //int scritti=write(fo,udp_buffer,recved);
-            if(udp_buffer[0] == 101) {
-                char sat_buff[200];
-                //memcpy(sat_buff,udp_buffer+1,recved-1);
-                //RX(sat_buff,recved-1);
             }
         }
     }
 }
+long long current_timestamp() {
+    struct timeval te;
+    gettimeofday(&te, NULL); // get current time
+    long long milliseconds = te.tv_sec*1000LL + te.tv_usec/1000; 
+    //printf("milliseconds: %lld\n", milliseconds);
+    return milliseconds;
+}
+
+
 void socket_initialize() {
     if ( (sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) {
         perror("socket creation failed");
         exit(EXIT_FAILURE);
     }
-    memset(&servaddr, 0, sizeof(servaddr));
-    memset(&cliaddr, 0, sizeof(cliaddr));
+    bzero(&servaddr, sizeof(servaddr)); 
     servaddr.sin_family = AF_INET; // IPv4
-    servaddr.sin_addr.s_addr = INADDR_ANY;
+    servaddr.sin_addr.s_addr = htonl(INADDR_ANY); 
     servaddr.sin_port = htons(serv_port);
-    
-    cliaddr.sin_family = AF_INET; // IPv4
-    cliaddr.sin_addr.s_addr = inet_addr("192.168.3.91");;
-    cliaddr.sin_port = htons(serv_port);
-    
     if ( bind(sockfd, (const struct sockaddr *)&servaddr, sizeof(servaddr)) < 0 )
     {
         perror("bind failed");
@@ -193,12 +166,22 @@ void socket_initialize() {
 }
 
 void UDP_ssend(char *hello, int leng) {
-    bzero(&servaddr, sizeof(servaddr));
-    servaddr.sin_family = AF_INET;
-    servaddr.sin_port = htons(6060);
-    servaddr.sin_addr.s_addr = inet_addr("192.168.3.54");
+    bzero(&cliaddr, sizeof(cliaddr));
+    cliaddr.sin_family = AF_INET;
+    cliaddr.sin_port = htons(6060);
+    cliaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
     
-    sendto(sockfd, (const char *)hello, leng,
-           0, (const struct sockaddr *) &servaddr,
-           sizeof(servaddr));
+    sendto(sockfd, (const char *)hello, leng, 0, (const struct sockaddr *) &cliaddr, sizeof(cliaddr));
 }
+int main(void)
+{
+    //serial_initialize();
+    socket_initialize();
+	long long ti = current_timestamp();
+    pthread_create(&udp_thread, NULL, UDP_listener, NULL);
+    //pthread_create(&serial, NULL, serial_listen, NULL);         
+    //pthread_join(serial, NULL);
+    pthread_join(udp_thread, NULL);
+}
+
+
