@@ -50,7 +50,7 @@ typedef struct {
 }  tlm_sct;
 
 void serial_initialize() {
-    fd = open("/dev/ttyS2",O_RDWR );
+    fd = open("/dev/ttyS3",O_RDWR );
     if(fd == -1)
         printf("\n  Error! in Opening ttyUSB0  ");
     struct termios SerialPortSettings;
@@ -108,11 +108,12 @@ void *UDP_listener(void *vargp)
 {
     while(true) {
         len = sizeof(cliaddr); 
-        int ne = recvfrom(sockfd, udp_buffer, sizeof(udp_buffer), 0, (struct sockaddr*)&cliaddr,&len); 
+        int UDP_recved_len = recvfrom(sockfd, udp_buffer, sizeof(udp_buffer), 0, (struct sockaddr*)&cliaddr,&len); 
         if(ne>0) {
-                for(int n =0 ; n<ne;n++) printf("%d ", udp_buffer[n]);
+                for(int n =0 ; n<UDP_recved_len;n++) printf("%d ", udp_buffer[n]);
                 printf("\n");
         }
+	int wrote_bytes =  write(fd,&udp_buffer,UDP_recved_len);
     }
 }
 long long current_timestamp() {
@@ -149,12 +150,12 @@ void UDP_ssend(char *hello, int leng) {
 }
 int main(void)
 {
-    //serial_initialize();
+    serial_initialize();
     socket_initialize();
 	long long ti = current_timestamp();
     pthread_create(&udp_thread, NULL, UDP_listener, NULL);
-    //pthread_create(&serial, NULL, serial_listen, NULL);         
-    //pthread_join(serial, NULL);
+    pthread_create(&serial, NULL, serial_listen, NULL);         
+    pthread_join(serial, NULL);
     pthread_join(udp_thread, NULL);
 }
 
