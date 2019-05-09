@@ -71,6 +71,27 @@ void serial_initialize() {
     if((tcsetattr(fd,TCSANOW,&SerialPortSettings)) != 0) printf("\n  ERROR ! in Setting attributes");
 }
 
+void commands_strings() {
+    strcpy(command[0], "udp");
+    strcpy(command[1], "udp off");
+    strcpy(command[2], "serial");
+    strcpy(command[3], "serial off");
+    strcpy(command[4], "sat");
+    strcpy(command[5], "sat off");
+    strcpy(command[6], "e");
+    strcpy(command[7], "serial raw");
+    strcpy(command[8], "serial raw off");
+    strcpy(command[9], "udp raw");
+    strcpy(command[10], "udp raw off");
+    strcpy(command[11], "open");
+    strcpy(command[12], "next");
+    strcpy(command[13], "download");
+    strcpy(command[14], "delete");
+    strcpy(command[15], "close");
+    strcpy(command[16], "restart");
+}
+
+
 void *serial_listen(void *vargp)
 {
     while(true) {
@@ -157,6 +178,51 @@ int main(void)
     pthread_create(&serial, NULL, serial_listen, NULL);         
     pthread_join(serial, NULL);
     pthread_join(udp_thread, NULL);
+    
+    char cmd[255];
+    memset(cmd, 0, 255);
+    do
+    {
+        fgets(cmd, 255, stdin);
+        cmd[strcspn ( cmd, "\n")] = '\0';
+        if(!strcmp(cmd, command[0])) socket_initialize();
+        else if(!strcmp(cmd, command[1])) close(sockfd);
+        else if(!strcmp(cmd, command[2])) serial_initialize(pkt_size);
+        else if(!strcmp(cmd, command[3])) close(fd);
+        else if(!strcmp(cmd, command[4])) sat_parse = true;
+        else if(!strcmp(cmd, command[5])) sat_parse = false;
+        else if(!strcmp(cmd, command[7])) serial_raw = true;
+        else if(!strcmp(cmd, command[8])) serial_raw = false;
+        else if(!strcmp(cmd, command[9])) udp_raw = true;
+        else if(!strcmp(cmd, command[10])) udp_raw = false;
+        else if(!strcmp(cmd, command[11])) {
+            char write_buffer[] = "v";
+            write(fd,write_buffer,1);
+        }
+        else if(!strcmp(cmd, command[12])) {
+            char write_buffer[] = "w";
+            write(fd,write_buffer,1);
+        }
+        else if(!strcmp(cmd, command[13])) {
+            char write_buffer[] = "q";
+            write(fd,write_buffer,1);
+        }
+        else if(!strcmp(cmd, command[14])) {
+            char write_buffer[] = "y";
+            write(fd,write_buffer,1);
+        }
+        else if(!strcmp(cmd, command[15])) {
+            printf("Close..\n");
+            close(fo);
+        }
+        else if(!strcmp(cmd, command[6])) {
+            char write_buffer[] = "f";
+            write(fd,write_buffer,1);
+        }
+        
+    } while(strcmp(cmd, "exit"));
+    close(fd);
+    close(sockfd);
 }
 
 
