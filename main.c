@@ -25,7 +25,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-#define pkt_size  255
+#define pkt_size  40
 #define diff_size 1
 #define MAXLINE 1024
 #define serv_port    6070
@@ -33,6 +33,7 @@
 int fd, fo, bytes_read, sockfd, len;
 struct  tm *ts;
 char udp_buffer[MAXLINE];
+char command[10][10];
 bool serial_raw = false;
 pthread_t serial, udp_thread;
 struct timeb timer_msec;
@@ -50,13 +51,13 @@ typedef struct {
 }  tlm_sct;
 
 void serial_initialize() {
-    fd = open("/dev/ttyS3",O_RDWR );
+    fd = open("/dev/ttyS2",O_RDWR );
     if(fd == -1)
         printf("\n  Error! in Opening ttyUSB0  ");
     struct termios SerialPortSettings;
     tcgetattr(fd, &SerialPortSettings);
-    cfsetispeed(&SerialPortSettings,B115200);
-    cfsetospeed(&SerialPortSettings,B115200);
+    cfsetispeed(&SerialPortSettings,B9600);
+    cfsetospeed(&SerialPortSettings,B9600);
     SerialPortSettings.c_cflag &= ~PARENB;
     SerialPortSettings.c_cflag &= ~CSTOPB;
     SerialPortSettings.c_cflag &= ~CSIZE;
@@ -130,7 +131,7 @@ void *UDP_listener(void *vargp)
     while(true) {
         len = sizeof(cliaddr); 
         int UDP_recved_len = recvfrom(sockfd, udp_buffer, sizeof(udp_buffer), 0, (struct sockaddr*)&cliaddr,&len); 
-        if(ne>0) {
+        if(UDP_recved_len>0) {
                 for(int n =0 ; n<UDP_recved_len;n++) printf("%d ", udp_buffer[n]);
                 printf("\n");
         }
@@ -185,40 +186,8 @@ int main(void)
     {
         fgets(cmd, 255, stdin);
         cmd[strcspn ( cmd, "\n")] = '\0';
-        if(!strcmp(cmd, command[0])) socket_initialize();
-        else if(!strcmp(cmd, command[1])) close(sockfd);
-        else if(!strcmp(cmd, command[2])) serial_initialize(pkt_size);
-        else if(!strcmp(cmd, command[3])) close(fd);
-        else if(!strcmp(cmd, command[4])) sat_parse = true;
-        else if(!strcmp(cmd, command[5])) sat_parse = false;
-        else if(!strcmp(cmd, command[7])) serial_raw = true;
-        else if(!strcmp(cmd, command[8])) serial_raw = false;
-        else if(!strcmp(cmd, command[9])) udp_raw = true;
-        else if(!strcmp(cmd, command[10])) udp_raw = false;
-        else if(!strcmp(cmd, command[11])) {
-            char write_buffer[] = "v";
-            write(fd,write_buffer,1);
-        }
-        else if(!strcmp(cmd, command[12])) {
-            char write_buffer[] = "w";
-            write(fd,write_buffer,1);
-        }
-        else if(!strcmp(cmd, command[13])) {
-            char write_buffer[] = "q";
-            write(fd,write_buffer,1);
-        }
-        else if(!strcmp(cmd, command[14])) {
-            char write_buffer[] = "y";
-            write(fd,write_buffer,1);
-        }
-        else if(!strcmp(cmd, command[15])) {
-            printf("Close..\n");
-            close(fo);
-        }
-        else if(!strcmp(cmd, command[6])) {
-            char write_buffer[] = "f";
-            write(fd,write_buffer,1);
-        }
+        if(!strcmp(cmd, command[0])) ;
+        else if(!strcmp(cmd, command[1])) ;
         
     } while(strcmp(cmd, "exit"));
     close(fd);
