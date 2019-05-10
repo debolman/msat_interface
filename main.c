@@ -25,7 +25,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-#define pkt_size  40
+#define pkt_size  48
 #define diff_size 1
 #define MAXLINE 1024
 #define serv_port    6070
@@ -33,9 +33,10 @@
 int fd, fo, bytes_read, sockfd, len;
 struct  tm *ts;
 char udp_buffer[MAXLINE];
-char command[10][10];
+char command[10][32];
 bool serial_raw = false;
-pthread_t serial, udp_thread;
+bool udp_raw = false;
+pthread_t serial_thread, udp_thread;
 struct timeb timer_msec;
 long long int timestamp_msec, t_o, t_n, t_d;
 char udp_buffer[MAXLINE];
@@ -51,13 +52,12 @@ typedef struct {
 }  tlm_sct;
 
 void serial_initialize() {
-    fd = open("/dev/ttyS2",O_RDWR );
-    if(fd == -1)
-        printf("\n  Error! in Opening ttyUSB0  ");
+    fd = open("/dev/ttyS0",O_RDWR );
+    if(fd == -1) printf("\n  Error! in Opening ttyUSB0  ");
     struct termios SerialPortSettings;
     tcgetattr(fd, &SerialPortSettings);
-    cfsetispeed(&SerialPortSettings,B9600);
-    cfsetospeed(&SerialPortSettings,B9600);
+    cfsetispeed(&SerialPortSettings,B38400);
+    cfsetospeed(&SerialPortSettings,B38400);
     SerialPortSettings.c_cflag &= ~PARENB;
     SerialPortSettings.c_cflag &= ~CSTOPB;
     SerialPortSettings.c_cflag &= ~CSIZE;
@@ -68,7 +68,7 @@ void serial_initialize() {
     SerialPortSettings.c_iflag &= ~(  ECHO | ECHOE | ISIG);
     SerialPortSettings.c_oflag &= ~OPOST;
     SerialPortSettings.c_cc[VMIN] = pkt_size;//pkt_size;
-    SerialPortSettings.c_cc[VTIME] = 0.5; /* Wait 3 deciseconds   */
+    SerialPortSettings.c_cc[VTIME] = 5; /* Wait 3 deciseconds   */
     if((tcsetattr(fd,TCSANOW,&SerialPortSettings)) != 0) printf("\n  ERROR ! in Setting attributes");
 }
 
@@ -77,19 +77,7 @@ void commands_strings() {
     strcpy(command[1], "udp off");
     strcpy(command[2], "serial");
     strcpy(command[3], "serial off");
-    strcpy(command[4], "sat");
-    strcpy(command[5], "sat off");
-    strcpy(command[6], "e");
-    strcpy(command[7], "serial raw");
-    strcpy(command[8], "serial raw off");
-    strcpy(command[9], "udp raw");
-    strcpy(command[10], "udp raw off");
-    strcpy(command[11], "open");
-    strcpy(command[12], "next");
-    strcpy(command[13], "download");
-    strcpy(command[14], "delete");
-    strcpy(command[15], "close");
-    strcpy(command[16], "restart");
+    strcpy(command[4], "close");
 }
 
 
@@ -97,13 +85,10 @@ void *serial_listen(void *vargp)
 {
     while(true) {
         tcflush(fd, TCIFLUSH);
-        bytes_read = 0;
         char read_buffer[pkt_size];
         bytes_read = read(fd,&read_buffer,pkt_size);
-        printf("%d %d %d %d \n",  bytes_read, read_buffer[0], read_buffer[1], read_buffer[2]);
-        
+        //printf("%d %d %d %d \n",  bytes_read, read_buffer[0], read_buffer[1], read_buffer[2]);
         UDP_ssend(&read_buffer,bytes_read);
-        
         if(bytes_read >0) {
             if(serial_raw) {
                 for(int n =0;n< bytes_read;n++)
@@ -126,18 +111,20 @@ void *serial_listen(void *vargp)
     }
     return NULL;
 }
+
 void *UDP_listener(void *vargp)
 {
     while(true) {
         len = sizeof(cliaddr); 
         int UDP_recved_len = recvfrom(sockfd, udp_buffer, sizeof(udp_buffer), 0, (struct sockaddr*)&cliaddr,&len); 
-        if(UDP_recved_len>0) {
-                for(int n =0 ; n<UDP_recved_len;n++) printf("%d ", udp_buffer[n]);
+        if(UDP_recved_len>0 && udp_raw) {
+          	for(int n =0 ; n<UDP_recved_len;n++) printf("%d ", udp_buffer[n]);
                 printf("\n");
         }
 	int wrote_bytes =  write(fd,&udp_buffer,UDP_recved_len);
     }
 }
+
 long long current_timestamp() {
     struct timeval te;
     gettimeofday(&te, NULL); // get current time
@@ -166,30 +153,48 @@ void UDP_ssend(char *hello, int leng) {
     bzero(&cliaddr, sizeof(cliaddr));
     cliaddr.sin_family = AF_INET;
     cliaddr.sin_port = htons(6060);
-    cliaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
-    
+    cliaddr.sin_addr.s_addr = inet_addr("192.168.3.54");
     sendto(sockfd, (const char *)hello, leng, 0, (const struct sockaddr *) &cliaddr, sizeof(cliaddr));
 }
+
 int main(void)
 {
+	commands_strings();
     serial_initialize();
     socket_initialize();
-	long long ti = current_timestamp();
     pthread_create(&udp_thread, NULL, UDP_listener, NULL);
-    pthread_create(&serial, NULL, serial_listen, NULL);         
-    pthread_join(serial, NULL);
-    pthread_join(udp_thread, NULL);
-    
-    char cmd[255];
-    memset(cmd, 0, 255);
+    pthread_create(&serial_thread, NULL, serial_listen, NULL);         
+//    pthread_join(serial_thread, NULL);
+//    pthread_join(udp_thread, NULL);
+    char cmd[25];
+    memset(cmd, 0, 25);
     do
     {
-        fgets(cmd, 255, stdin);
-        cmd[strcspn ( cmd, "\n")] = '\0';
-        if(!strcmp(cmd, command[0])) ;
-        else if(!strcmp(cmd, command[1])) ;
-        
-    } while(strcmp(cmd, "exit"));
+	/*char *buffer;
+    size_t bufsize = 32;
+    size_t characters;
+
+    buffer = (char *)malloc(bufsize * sizeof(char));
+    if( buffer == NULL)
+    {
+        perror("Unable to allocate buffer");
+        exit(1);
+    }
+
+    printf("Type something: ");
+    characters = getline(&buffer,&bufsize,stdin);
+
+                for(int n =0;n< 32;n++)
+                    printf("%d ",buffer[n]);
+                printf("\n");*/
+      fgets(cmd, 25, stdin);
+     	cmd[strcspn ( cmd, "\n")] = '\0';
+	if(!strcmp(cmd, command[0])) udp_raw = true;
+   	else if(!strcmp(cmd, command[1])) udp_raw = false;
+ 	else if(!strcmp(cmd, command[2])) serial_raw = true;
+        else if(!strcmp(cmd, command[3])) serial_raw = false;
+        else if(!strcmp(cmd, command[4])) exit(0);
+    } while(strcmp(cmd, "c"));
     close(fd);
     close(sockfd);
 }
