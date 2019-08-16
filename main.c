@@ -25,7 +25,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-#define pkt_size  48
+#define pkt_size  255
 #define diff_size 1
 #define MAXLINE 1024
 #define serv_port    6070
@@ -36,7 +36,7 @@ char udp_buffer[MAXLINE];
 char command[10][32];
 bool serial_raw = false;
 bool udp_raw = false;
-pthread_t serial_thread, udp_thread;
+pthread_t serial_thread, udp_thread, udp_sample_thread;
 struct timeb timer_msec;
 long long int timestamp_msec, t_o, t_n, t_d;
 char udp_buffer[MAXLINE];
@@ -68,7 +68,7 @@ void serial_initialize() {
     SerialPortSettings.c_iflag &= ~(  ECHO | ECHOE | ISIG);
     SerialPortSettings.c_oflag &= ~OPOST;
     SerialPortSettings.c_cc[VMIN] = pkt_size;//pkt_size;
-    SerialPortSettings.c_cc[VTIME] = 5; /* Wait 3 deciseconds   */
+    SerialPortSettings.c_cc[VTIME] = 1.5; /* Wait 3 deciseconds   */
     if((tcsetattr(fd,TCSANOW,&SerialPortSettings)) != 0) printf("\n  ERROR ! in Setting attributes");
 }
 
@@ -87,7 +87,7 @@ void *serial_listen(void *vargp)
         tcflush(fd, TCIFLUSH);
         char read_buffer[pkt_size];
         bytes_read = read(fd,&read_buffer,pkt_size);
-        //printf("%d %d %d %d \n",  bytes_read, read_buffer[0], read_buffer[1], read_buffer[2]);
+        printf("%d %d %d %d \n",  bytes_read, read_buffer[0], read_buffer[1], read_buffer[2]);
         UDP_ssend(&read_buffer,bytes_read);
         if(bytes_read >0) {
             if(serial_raw) {
@@ -153,8 +153,20 @@ void UDP_ssend(char *hello, int leng) {
     bzero(&cliaddr, sizeof(cliaddr));
     cliaddr.sin_family = AF_INET;
     cliaddr.sin_port = htons(6060);
-    cliaddr.sin_addr.s_addr = inet_addr("192.168.3.54");
+    cliaddr.sin_addr.s_addr = inet_addr("79.17.44.171");
     sendto(sockfd, (const char *)hello, leng, 0, (const struct sockaddr *) &cliaddr, sizeof(cliaddr));
+}
+
+void udp_sample(char *hello, int leng) {
+    char buff_sample[pkt_size];
+    for(int i =0;i<pkt_size;i++) {
+        buff_sample[i] = i;
+    }
+    while(true)
+    {
+        UDP_ssend(&buff_sample,pkt_size);
+        sleep(1);
+    }
 }
 
 int main(void)
@@ -163,7 +175,8 @@ int main(void)
     serial_initialize();
     socket_initialize();
     pthread_create(&udp_thread, NULL, UDP_listener, NULL);
-    pthread_create(&serial_thread, NULL, serial_listen, NULL);         
+    pthread_create(&serial_thread, NULL, serial_listen, NULL);
+    pthread_create(&udp_sample_thread, NULL, udp_sample, NULL);
 //    pthread_join(serial_thread, NULL);
 //    pthread_join(udp_thread, NULL);
     char cmd[25];
