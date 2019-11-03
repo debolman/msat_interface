@@ -24,11 +24,19 @@
 #include <sys/time.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <my_global.h>
+#include <mysql.h>
 
 #define pkt_size  255
 #define diff_size 1
 #define MAXLINE 1024
 #define serv_port    6070
+
+#define serial_activate 0
+#define udp_activate    0
+#define ram_allocation  0
+#define mysql_activate  1
+
 
 int fd, fo, bytes_read, sockfd, len;
 struct  tm *ts;
@@ -42,6 +50,7 @@ long long int timestamp_msec, t_o, t_n, t_d;
 char udp_buffer[MAXLINE];
 struct sockaddr_in servaddr, cliaddr, rx_addr;
 
+MYSQL *con;
 typedef struct {
     int id;
     double latitud;
@@ -50,6 +59,44 @@ typedef struct {
     int unix_time;
     double altitud;
 }  tlm_sct;
+
+void finish_with_error(MYSQL *con)
+{
+  fprintf(stderr, "%s\n", mysql_error(con));
+  mysql_close(con);
+  exit(1);
+}
+
+void mysql_connection() {
+    
+    MYSQL *con = mysql_init(NULL);
+     
+     if (con == NULL)
+     {
+         fprintf(stderr, "%s\n", mysql_error(con));
+         exit(1);
+     }
+
+     if (mysql_real_connect(con, "debolman.ns0.it", "interface", "interface",
+             "interface", 0, NULL, 0) == NULL)
+     {
+         finish_with_error(con);
+     }
+     
+     if (mysql_query(con, "DROP TABLE IF EXISTS Cars")) {
+         finish_with_error(con);
+     }
+     
+     if (mysql_query(con, "CREATE TABLE Cars(Id INT, Name TEXT, Price INT)")) {
+         finish_with_error(con);
+     }
+}
+
+void create_table() {
+    if (mysql_query(con, "CREATE TABLE Cars(Id INT, Name TEXT, Price INT)")) {
+        finish_with_error(con);
+    }
+}
 
 void serial_initialize() {
     fd = open("/dev/ttyS0",O_RDWR );
@@ -88,7 +135,7 @@ void *serial_listen(void *vargp)
         char read_buffer[pkt_size];
         bytes_read = read(fd,&read_buffer,pkt_size);
         printf("%d %d %d %d \n",  bytes_read, read_buffer[0], read_buffer[1], read_buffer[2]);
-        UDP_ssend(&read_buffer,bytes_read);
+        //UDP_ssend(&read_buffer,bytes_read);
         if(bytes_read >0) {
             if(serial_raw) {
                 for(int n =0;n< bytes_read;n++)
@@ -157,59 +204,22 @@ void UDP_ssend(char *hello, int leng) {
     sendto(sockfd, (const char *)hello, leng, 0, (const struct sockaddr *) &cliaddr, sizeof(cliaddr));
 }
 
-void udp_sample(char *hello, int leng) {
-    char buff_sample[pkt_size];
-    for(int i =0;i<pkt_size;i++) {
-        buff_sample[i] = i;
-    }
-    while(true)
-    {
-        UDP_ssend(&buff_sample,pkt_size);
-        sleep(1);
-    }
-}
 
 int main(void)
 {
 	commands_strings();
-    serial_initialize();
-    socket_initialize();
-    pthread_create(&udp_thread, NULL, UDP_listener, NULL);
-    pthread_create(&serial_thread, NULL, serial_listen, NULL);
-    pthread_create(&udp_sample_thread, NULL, udp_sample, NULL);
-//    pthread_join(serial_thread, NULL);
-//    pthread_join(udp_thread, NULL);
-    char cmd[25];
-    memset(cmd, 0, 25);
-    do
-    {
-	/*char *buffer;
-    size_t bufsize = 32;
-    size_t characters;
-
-    buffer = (char *)malloc(bufsize * sizeof(char));
-    if( buffer == NULL)
-    {
-        perror("Unable to allocate buffer");
-        exit(1);
-    }
-
-    printf("Type something: ");
-    characters = getline(&buffer,&bufsize,stdin);
-
-                for(int n =0;n< 32;n++)
-                    printf("%d ",buffer[n]);
-                printf("\n");*/
-      fgets(cmd, 25, stdin);
-     	cmd[strcspn ( cmd, "\n")] = '\0';
-	if(!strcmp(cmd, command[0])) udp_raw = true;
-   	else if(!strcmp(cmd, command[1])) udp_raw = false;
- 	else if(!strcmp(cmd, command[2])) serial_raw = true;
-        else if(!strcmp(cmd, command[3])) serial_raw = false;
-        else if(!strcmp(cmd, command[4])) exit(0);
-    } while(strcmp(cmd, "c"));
-    close(fd);
-    close(sockfd);
+    if(serial_activate) serial_initialize();
+    if (udp_activate) socket_initialize();
+    if (udp_activate) pthread_create(&udp_thread, NULL, UDP_listener, NULL);
+    if(serial_activate) pthread_create(&serial_thread, NULL, serial_listen, NULL);
+    
+    mysql_connection();
+    create_table();
+    
+    if(serial_activate) pthread_join(serial_thread, NULL);
+    if (udp_activate) pthread_join(udp_thread, NULL);
+    if(serial_activate) close(fd);
+    if (udp_activate) close(sockfd);
 }
 
 
