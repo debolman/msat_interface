@@ -24,7 +24,7 @@
 #include <sys/time.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include <my_global.h>
+//#include <my_global.h>
 #include <mysql.h>
 
 #define pkt_size  255
@@ -77,7 +77,7 @@ void mysql_connection() {
          exit(1);
      }
 
-     if (mysql_real_connect(con, "debolman.ns0.it", "interface", "interface",
+     if (mysql_real_connect(con, "localhost", "interface", "interface",
              "interface", 0, NULL, 0) == NULL)
      {
          finish_with_error(con);
@@ -92,11 +92,6 @@ void mysql_connection() {
      }
 }
 
-void create_table() {
-    if (mysql_query(con, "CREATE TABLE Cars(Id INT, Name TEXT, Price INT)")) {
-        finish_with_error(con);
-    }
-}
 
 void serial_initialize() {
     fd = open("/dev/ttyS0",O_RDWR );
@@ -214,7 +209,7 @@ int main(void)
     if(serial_activate) pthread_create(&serial_thread, NULL, serial_listen, NULL);
     
     mysql_connection();
-    create_table();
+    //create_table();
     
     if(serial_activate) pthread_join(serial_thread, NULL);
     if (udp_activate) pthread_join(udp_thread, NULL);
