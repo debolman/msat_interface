@@ -26,6 +26,7 @@
 #include <stdbool.h>
 //#include <my_global.h>
 #include <mysql.h>
+#include <netdb.h>
 
 #define pkt_size  255
 #define diff_size 1
@@ -49,8 +50,9 @@ struct timeb timer_msec;
 long long int timestamp_msec, t_o, t_n, t_d;
 char udp_buffer[MAXLINE];
 struct sockaddr_in servaddr, cliaddr, rx_addr;
+char hostbuffer[] = "debolman.ns0.it";
 
-MYSQL *con;
+//MYSQL *con;
 typedef struct {
     int id;
     double latitud;
@@ -60,11 +62,49 @@ typedef struct {
     double altitud;
 }  tlm_sct;
 
+
+void checkHostEntry(struct hostent * hostentry)
+{
+    if (hostentry == NULL)
+    {
+        perror("gethostbyname");
+        exit(1);
+    }
+}
+
+char *ip_from_name(char hostbuffer[]) {
+    char *IPbuffer;
+      struct hostent *host_entry;
+      int hostname;
+    
+      host_entry = gethostbyname(hostbuffer);
+      checkHostEntry(host_entry);
+    
+      IPbuffer = inet_ntoa(*((struct in_addr*) host_entry->h_addr_list[0]));
+    
+      printf("Hostname: %s\n", hostbuffer);
+      printf("Host IP: %s \n", IPbuffer);
+    return IPbuffer;
+}
+
 void finish_with_error(MYSQL *con)
 {
   fprintf(stderr, "%s\n", mysql_error(con));
   mysql_close(con);
   exit(1);
+}
+
+unsigned long long  timee() {
+    struct timeval tv;
+
+    gettimeofday(&tv, NULL);
+
+    unsigned long long millisecondsSinceEpoch =
+        (unsigned long long)(tv.tv_sec) * 1000 +
+        (unsigned long long)(tv.tv_usec) / 1000;
+
+    printf("%llu\n", millisecondsSinceEpoch);
+    return millisecondsSinceEpoch;
 }
 
 void mysql_connection() {
@@ -77,20 +117,23 @@ void mysql_connection() {
          exit(1);
      }
 
-     if (mysql_real_connect(con, "localhost", "interface", "interface",
+     if (mysql_real_connect(con, ip_from_name("debolman.ns0.it"), "interface", "interface",
              "interface", 0, NULL, 0) == NULL)
      {
          finish_with_error(con);
      }
-     
-     if (mysql_query(con, "DROP TABLE IF EXISTS Cars")) {
-         finish_with_error(con);
-     }
-     
-     if (mysql_query(con, "CREATE TABLE Cars(Id INT, Name TEXT, Price INT)")) {
-         finish_with_error(con);
-     }
+    
+    char buf[1024] = {};
+    char query_string[] = {  "INSERT INTO carr VALUES (%d,%d,%llu)" };
+    for(int n =0;n<1000;n++) {
+        int a = time(NULL);
+        
+        sprintf(buf, query_string,45,a,timee());
+        if (mysql_query(con,buf)) finish_with_error(con);
+        usleep(10000);
+    }
 }
+
 
 
 void serial_initialize() {
@@ -200,6 +243,8 @@ void UDP_ssend(char *hello, int leng) {
 }
 
 
+
+
 int main(void)
 {
 	commands_strings();
@@ -207,9 +252,10 @@ int main(void)
     if (udp_activate) socket_initialize();
     if (udp_activate) pthread_create(&udp_thread, NULL, UDP_listener, NULL);
     if(serial_activate) pthread_create(&serial_thread, NULL, serial_listen, NULL);
-    
-    mysql_connection();
+    if (mysql_activate) mysql_connection();
     //create_table();
+    timee();
+      
     
     if(serial_activate) pthread_join(serial_thread, NULL);
     if (udp_activate) pthread_join(udp_thread, NULL);
