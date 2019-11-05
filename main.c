@@ -24,7 +24,6 @@
 #include <sys/time.h>
 #include <stdio.h>
 #include <stdbool.h>
-//#include <my_global.h>
 #include <mysql.h>
 #include <netdb.h>
 
@@ -51,8 +50,9 @@ long long int timestamp_msec, t_o, t_n, t_d;
 char udp_buffer[MAXLINE];
 struct sockaddr_in servaddr, cliaddr, rx_addr;
 char hostbuffer[] = "debolman.ns0.it";
+MYSQL *con;
+unsigned long long toc, tic;
 
-//MYSQL *con;
 typedef struct {
     int id;
     double latitud;
@@ -81,9 +81,7 @@ char *ip_from_name(char hostbuffer[]) {
       checkHostEntry(host_entry);
     
       IPbuffer = inet_ntoa(*((struct in_addr*) host_entry->h_addr_list[0]));
-    
-      printf("Hostname: %s\n", hostbuffer);
-      printf("Host IP: %s \n", IPbuffer);
+      //printf("Host IP: %s \n", IPbuffer);
     return IPbuffer;
 }
 
@@ -103,13 +101,48 @@ unsigned long long  timee() {
         (unsigned long long)(tv.tv_sec) * 1000 +
         (unsigned long long)(tv.tv_usec) / 1000;
 
-    printf("%llu\n", millisecondsSinceEpoch);
+    //printf("%llu\n", millisecondsSinceEpoch);
     return millisecondsSinceEpoch;
+}
+
+void write_w_connection(unsigned long long unixtime) {
+    
+    MYSQL *conn = mysql_init(NULL);
+     
+     if (conn == NULL)
+     {
+         fprintf(stderr, "%s\n", mysql_error(conn));
+         exit(1);
+     }
+
+     if (mysql_real_connect(conn, ip_from_name("debolman.ns0.it"), "interface", "interface", "interface", 0, NULL, 0) == NULL)
+     {
+         finish_with_error(conn);
+     }
+    
+    char buf[1024] = {};
+    char query_string[] = {  "INSERT INTO carr VALUES (%d,%d,%llu)" };
+        int a = time(NULL);
+        
+        sprintf(buf, query_string,45,a,unixtime);
+        if (mysql_query(conn,buf)) finish_with_error(conn);
+    mysql_close(conn);
+}
+
+void write_wo_connection(unsigned long long unixtime) {
+    
+     
+    char buf[1024] = {};
+    char query_string[] = {  "INSERT INTO carr VALUES (%d,%d,%llu)" };
+        int a = time(NULL);
+        
+        sprintf(buf, query_string,46,a,unixtime);
+        if (mysql_query(con,buf)) finish_with_error(con);
 }
 
 void mysql_connection() {
     
-    MYSQL *con = mysql_init(NULL);
+    con = mysql_init(NULL);
      
      if (con == NULL)
      {
@@ -123,17 +156,7 @@ void mysql_connection() {
          finish_with_error(con);
      }
     
-    char buf[1024] = {};
-    char query_string[] = {  "INSERT INTO carr VALUES (%d,%d,%llu)" };
-    for(int n =0;n<1000;n++) {
-        int a = time(NULL);
-        
-        sprintf(buf, query_string,45,a,timee());
-        if (mysql_query(con,buf)) finish_with_error(con);
-        usleep(10000);
-    }
 }
-
 
 
 void serial_initialize() {
@@ -247,20 +270,25 @@ void UDP_ssend(char *hello, int leng) {
 
 int main(void)
 {
+    tic = timee();
 	commands_strings();
     if(serial_activate) serial_initialize();
     if (udp_activate) socket_initialize();
     if (udp_activate) pthread_create(&udp_thread, NULL, UDP_listener, NULL);
     if(serial_activate) pthread_create(&serial_thread, NULL, serial_listen, NULL);
-    if (mysql_activate) mysql_connection();
-    //create_table();
-    timee();
-      
+        
+   
+    mysql_connection();
+    write_wo_connection(timee());
+    mysql_close(con);
     
     if(serial_activate) pthread_join(serial_thread, NULL);
     if (udp_activate) pthread_join(udp_thread, NULL);
     if(serial_activate) close(fd);
     if (udp_activate) close(sockfd);
+    toc = timee() - tic;
+    printf("%llu \n",toc);
+    
 }
 
 
