@@ -32,10 +32,10 @@
 #define MAXLINE 1024
 #define serv_port    6070
 
-#define serial_activate 0
+#define serial_activate 1
 #define udp_activate    0
 #define ram_allocation  0
-#define mysql_activate  1
+#define mysql_activate  0
 
 int fd, fo, bytes_read, sockfd, len;
 struct  tm *ts;

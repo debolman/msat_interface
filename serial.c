@@ -19,12 +19,12 @@
 #include <netdb.h>
 
 void serial_initialize() {
-    fd = open("/dev/ttyS0",O_RDWR );
+    fd = open("/dev/ttyUSB1",O_RDWR );
     if(fd == -1) printf("\n  Error! in Opening ttyUSB0  ");
     struct termios SerialPortSettings;
     tcgetattr(fd, &SerialPortSettings);
-    cfsetispeed(&SerialPortSettings,B38400);
-    cfsetospeed(&SerialPortSettings,B38400);
+    cfsetispeed(&SerialPortSettings,B115200);
+    cfsetospeed(&SerialPortSettings,B115200);
     SerialPortSettings.c_cflag &= ~PARENB;
     SerialPortSettings.c_cflag &= ~CSTOPB;
     SerialPortSettings.c_cflag &= ~CSIZE;
