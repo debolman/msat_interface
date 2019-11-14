@@ -19,7 +19,7 @@
 #include <netdb.h>
 
 void serial_initialize() {
-    fd = open("/dev/ttyUSB1",O_RDWR );
+    fd = open("/dev/cu.SLAB_USBtoUART",O_RDWR );
     if(fd == -1) printf("\n  Error! in Opening ttyUSB0  ");
     struct termios SerialPortSettings;
     tcgetattr(fd, &SerialPortSettings);
@@ -45,8 +45,8 @@ void *serial_listen(void *vargp)
         tcflush(fd, TCIFLUSH);
         char read_buffer[pkt_size];
         bytes_read = read(fd,&read_buffer,pkt_size);
-        printf("%d %d %d %d \n",  bytes_read, read_buffer[0], read_buffer[1], read_buffer[2]);
-        //UDP_ssend(&read_buffer,bytes_read);
+        //printf("%d %d %d %d \n",  bytes_read, read_buffer[0], read_buffer[1], read_buffer[2]);
+        UDP_ssend(read_buffer,bytes_read);
         if(bytes_read >0) {
             if(serial_raw) {
                 for(int n =0;n< bytes_read;n++)
@@ -57,13 +57,6 @@ void *serial_listen(void *vargp)
                 char bu[pkt_size-diff_size];
                 memcpy(bu,read_buffer+diff_size,sizeof(bu));
                 int scritti=write(fo,bu,sizeof(bu));
-            }
-            if(read_buffer[0] == 56 || read_buffer[0] == 1 || read_buffer[0] == 1) {
-                char str[11];
-                sprintf(str, "%lu.png", (unsigned long)time(NULL));
-                fo = open(str,O_WRONLY | O_CREAT | O_TRUNC | O_APPEND, 0666 );//| O_NDELAY);
-                if(fo == -1)
-                    printf("\n  Error! in Opening file  ");
             }
         }
     }

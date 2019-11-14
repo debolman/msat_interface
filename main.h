@@ -24,16 +24,16 @@
 #include <sys/time.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include <mysql.h>
+//#include <mysql.h>
 #include <netdb.h>
 
-#define pkt_size  255
+#define pkt_size  128
 #define diff_size 1
 #define MAXLINE 1024
-#define serv_port    6070
+#define serv_port    7070
 
 #define serial_activate 1
-#define udp_activate    0
+#define udp_activate    1
 #define ram_allocation  0
 #define mysql_activate  0
 
@@ -49,7 +49,7 @@ long long int timestamp_msec, t_o, t_n, t_d;
 char udp_buffer[MAXLINE];
 struct sockaddr_in servaddr, cliaddr, rx_addr;
 char hostbuffer[] = "debolman.ns0.it";
-MYSQL *con;
+//MYSQL *con;
 unsigned long long toc, tic;
 int counter = 0;
 
@@ -64,3 +64,4 @@ typedef struct {
 
 //void log_thd();
 unsigned long long  timee();
+void UDP_ssend(char*, int );
