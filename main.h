@@ -27,12 +27,15 @@
 //#include <mysql.h>
 #include <netdb.h>
 
+#define MAXEVENTS 64
 #define pkt_size  128
 #define diff_size 1
 #define MAXLINE 1024
-#define serv_port    7070
+#define udp_serv_port    6070
+#define tcp_serv_port    6080
 
-#define serial_activate 1
+#define serial_activate 0
+#define tcp_activation    10
 #define udp_activate    1
 #define ram_allocation  0
 #define mysql_activate  0
@@ -43,7 +46,7 @@ char udp_buffer[MAXLINE];
 char command[10][32];
 bool serial_raw = false;
 bool udp_raw = false;
-pthread_t serial_thread, udp_thread, udp_sample_thread, mysql_thread,log_thread;
+pthread_t serial_thread, udp_thread, udp_sample_thread, mysql_thread,log_thread, tcp_thread;
 struct timeb timer_msec;
 long long int timestamp_msec, t_o, t_n, t_d;
 char udp_buffer[MAXLINE];
