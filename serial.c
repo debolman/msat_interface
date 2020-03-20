@@ -19,12 +19,12 @@
 #include <netdb.h>
 
 void serial_initialize() {
-    fd = open("/dev/ttyS0",O_RDWR );
+    fd = open("/dev/cu.usbmodem14201",O_RDWR );
     if(fd == -1) printf("\n  Error! in Opening ttyUSB0  ");
     struct termios SerialPortSettings;
     tcgetattr(fd, &SerialPortSettings);
-    cfsetispeed(&SerialPortSettings,B38400);
-    cfsetospeed(&SerialPortSettings,B38400);
+    cfsetispeed(&SerialPortSettings,B9600);
+    cfsetospeed(&SerialPortSettings,B9600);
     SerialPortSettings.c_cflag &= ~PARENB;
     SerialPortSettings.c_cflag &= ~CSTOPB;
     SerialPortSettings.c_cflag &= ~CSIZE;
@@ -43,29 +43,26 @@ void *serial_listen(void *vargp)
 {
     while(true) {
         tcflush(fd, TCIFLUSH);
-        char read_buffer[pkt_size];
+        unsigned char read_buffer[pkt_size];
         bytes_read = read(fd,&read_buffer,pkt_size);
-        printf("%d %d %d %d \n",  bytes_read, read_buffer[0], read_buffer[1], read_buffer[2]);
-        //UDP_ssend(&read_buffer,bytes_read);
+        
+        //printf("%d %d %d %d \n",  bytes_read, read_buffer[0], read_buffer[1], read_buffer[2]);
+        if(udp_activate) UDP_send(&read_buffer,bytes_read);
         if(bytes_read >0) {
             if(serial_raw) {
                 for(int n =0;n< bytes_read;n++)
-                    printf("%d ",read_buffer[n]);
+                    printf("%c ",read_buffer[n]);
                 printf("\n");
+                //system("echo -e "\a"");
             }
-            if(read_buffer[0] == 57) {
-                char bu[pkt_size-diff_size];
-                memcpy(bu,read_buffer+diff_size,sizeof(bu));
-                int scritti=write(fo,bu,sizeof(bu));
-            }
-            if(read_buffer[0] == 56 || read_buffer[0] == 1 || read_buffer[0] == 1) {
-                char str[11];
-                sprintf(str, "%lu.png", (unsigned long)time(NULL));
-                fo = open(str,O_WRONLY | O_CREAT | O_TRUNC | O_APPEND, 0666 );//| O_NDELAY);
-                if(fo == -1)
-                    printf("\n  Error! in Opening file  ");
+            if(read_buffer[0] = 0x77) {
+                tic = timee();
+                printf("%lu \n", tic);
+                
+                toc = tic;
             }
         }
+        usleep(10000);
     }
     return NULL;
 }

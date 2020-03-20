@@ -33,14 +33,10 @@
 
 unsigned long long  timee() {
     struct timeval tv;
-
     gettimeofday(&tv, NULL);
-
     unsigned long long millisecondsSinceEpoch =
         (unsigned long long)(tv.tv_sec) * 1000 +
         (unsigned long long)(tv.tv_usec) / 1000;
-
-    //printf("%llu\n", millisecondsSinceEpoch);
     return millisecondsSinceEpoch;
 }
 
@@ -53,37 +49,48 @@ void commands_strings() {
 }
 
 
-
-
-
-long long current_timestamp() {
-    struct timeval te;
-    gettimeofday(&te, NULL); // get current time
-    long long milliseconds = te.tv_sec*1000LL + te.tv_usec/1000; 
-    return milliseconds;
-}
-
-
-
 void timer() {
-        toc = timee() - tic;
-           printf("%llu \n",toc);
-               tic = timee();
-    
+    while(1) {
+        unsigned long long diff;
+        diff = timee()-toc;
+        //printf("%lu %lu %lu\n",tic, toc, diff);
+        if(diff>4000) {
+        printf("\rlost: %d",diff/3450);
+        }
+        fflush(stdout);
+        usleep(1000000);
+    }
 }
 
-
+void file_management() {
+    printf("open \n");
+    int file  =open("pic.jpg", O_RDONLY );
+    unsigned char buffer_file[pkt_size];
+    buffer_file[0] = 57;
+    printf("read \n");
+    for(int n =0;n<40000;n++) {
+        
+        int letti = read(file,buffer_file+1,pkt_size-1);
+        UDP_send(buffer_file,pkt_size);
+        usleep(10000);
+        //printf("%d \n",n);
+        printf("%d %d %02X %02X %02X\n",n, buffer_file[0], buffer_file[1], buffer_file[2], buffer_file[3]);
+        
+    }
+    printf("end \n");
+}
 int main(void)
 {
+    toc = 0;
 	commands_strings();
+    pthread_create(&timer_thread, NULL, timer, NULL);
     if(serial_activate) serial_initialize();
     if (udp_activate) socket_initialize();
     if (udp_activate) pthread_create(&udp_thread, NULL, UDP_listener, NULL);
+    if(file_activate) pthread_create(&file_thread, NULL, file_management, NULL);
     if(serial_activate) pthread_create(&serial_thread, NULL, serial_listen, NULL);
-    
     if (mysql_activate) pthread_create(&mysql_thread, NULL, mysql_log, NULL);
-    pthread_join(mysql_thread, NULL);
-    
+    pthread_join(serial_thread, NULL);
     if(serial_activate) pthread_join(serial_thread, NULL);
     if (udp_activate) pthread_join(udp_thread, NULL);
     if(serial_activate) close(fd);
