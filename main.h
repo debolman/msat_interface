@@ -24,7 +24,7 @@
 #include <sys/time.h>
 #include <stdio.h>
 #include <stdbool.h>
-//#include <mysql.h>
+#include <mysql.h>
 #include <netdb.h>
 
 
@@ -42,6 +42,7 @@
 #define mysql_activate  0
 #define file_activate  0
 #define tcp_server  0
+#define GUI_activation  1
 
 int fd, fo, bytes_read, sockfd, len;
 struct  tm *ts;
@@ -49,7 +50,7 @@ char udp_buffer[MAXLINE];
 char command[10][32];
 bool serial_raw = false;
 bool udp_raw = false;
-pthread_t serial_thread, udp_thread, udp_sample_thread, mysql_thread,log_thread, tcp_thread, file_thread, timer_thread;
+pthread_t serial_thread, udp_thread, udp_sample_thread, mysql_thread,log_thread, tcp_thread, file_thread, timer_thread, GUI_thread;
 struct timeb timer_msec;
 long long int timestamp_msec, t_o, t_n, t_d;
 char udp_buffer[MAXLINE];

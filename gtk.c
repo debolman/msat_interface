@@ -63,7 +63,7 @@ layout();
   gtk_widget_show_all (window);
 }
 
-int GUI_activation ()
+void GUI_act ()
 {
   GtkApplication *app;
   int status;
@@ -71,10 +71,6 @@ int GUI_activation ()
   g_signal_connect (app, "activate", G_CALLBACK (activate), NULL);
   status = g_application_run (G_APPLICATION (app),0,0);
   g_object_unref (app);
-  return status;
+ 
 }
 
-int main() {
-    int status = GUI_activation();
-    return status;
-}

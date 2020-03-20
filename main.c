@@ -30,6 +30,7 @@
 #include "serial.c"
 #include "mysql.c"
 #include "net_UDP.c"
+#include "gtk.c"
 
 unsigned long long  timee() {
     struct timeval tv;
@@ -88,12 +89,14 @@ int main(void)
     pthread_create(&timer_thread, NULL, timer, NULL);
     if(serial_activate) serial_initialize();
     if (udp_activate) socket_initialize();
+    //if (GUI_activation) pthread_create(&GUI_thread, NULL, GUI_act, NULL);
     if (udp_activate) pthread_create(&udp_thread, NULL, UDP_listener, NULL);
     if(file_activate) pthread_create(&file_thread, NULL, file_management, NULL);
     if(serial_activate) pthread_create(&serial_thread, NULL, serial_listen, NULL);
     if (mysql_activate) pthread_create(&mysql_thread, NULL, mysql_log, NULL);
 
     if(tcp_activation) pthread_create(&tcp_thread, NULL, tcp_server, NULL);
+    GUI_act();
     pthread_join(mysql_thread, NULL);
     if(serial_activate) pthread_join(serial_thread, NULL);
     if (udp_activate) pthread_join(udp_thread, NULL);
