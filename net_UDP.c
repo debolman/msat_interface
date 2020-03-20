@@ -41,7 +41,7 @@ void socket_initialize() {
     bzero(&servaddr, sizeof(servaddr));
     servaddr.sin_family = AF_INET; // IPv4
     servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    servaddr.sin_port = htons(serv_port);
+    servaddr.sin_port = htons(udp_serv_port);
     if ( bind(sockfd, (const struct sockaddr *)&servaddr, sizeof(servaddr)) < 0 )
     {
         perror("bind failed");
@@ -49,7 +49,7 @@ void socket_initialize() {
     }
 }
 
-void UDP_send(char *hello, int leng) {
+void UDP_send(unsigned char *hello, int leng) {
     bzero(&cliaddr, sizeof(cliaddr));
     cliaddr.sin_family = AF_INET;
     cliaddr.sin_port = htons(7071);

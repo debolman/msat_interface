@@ -24,11 +24,11 @@
 #include <sys/time.h>
 #include <stdio.h>
 #include <stdbool.h>
-//#include <mysql.h>
+#include <mysql.h>
 #include <netdb.h>
 #include "main.h"
 #include "serial.c"
-//#include "mysql.c"
+#include "mysql.c"
 #include "net_UDP.c"
 
 unsigned long long  timee() {
@@ -49,20 +49,20 @@ void commands_strings() {
 }
 
 
-void timer() {
+void *timer() {
     while(1) {
         unsigned long long diff;
         diff = timee()-toc;
         //printf("%lu %lu %lu\n",tic, toc, diff);
         if(diff>4000) {
-        printf("\rlost: %d",diff/3450);
+        printf("\rlost: %llu",diff/3450);
         }
         fflush(stdout);
         usleep(1000000);
     }
 }
 
-void file_management() {
+void *file_management() {
     printf("open \n");
     int file  =open("pic.jpg", O_RDONLY );
     unsigned char buffer_file[pkt_size];
@@ -78,7 +78,9 @@ void file_management() {
         
     }
     printf("end \n");
+    return 0;
 }
+
 int main(void)
 {
     toc = 0;

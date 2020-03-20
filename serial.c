@@ -47,7 +47,7 @@ void *serial_listen(void *vargp)
         bytes_read = read(fd,&read_buffer,pkt_size);
         
         //printf("%d %d %d %d \n",  bytes_read, read_buffer[0], read_buffer[1], read_buffer[2]);
-        if(udp_activate) UDP_send(&read_buffer,bytes_read);
+        if(udp_activate) UDP_send(read_buffer,bytes_read);
         if(bytes_read >0) {
             if(serial_raw) {
                 for(int n =0;n< bytes_read;n++)
@@ -55,9 +55,9 @@ void *serial_listen(void *vargp)
                 printf("\n");
                 //system("echo -e "\a"");
             }
-            if(read_buffer[0] = 0x77) {
+            if(read_buffer[0] == 0x77) {
                 tic = timee();
-                printf("%lu \n", tic);
+                printf("%llu \n", tic);
                 
                 toc = tic;
             }
