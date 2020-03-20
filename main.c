@@ -24,11 +24,11 @@
 #include <sys/time.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include <mysql.h>
+//#include <mysql.h>
 #include <netdb.h>
 #include "main.h"
 #include "serial.c"
-#include "mysql.c"
+//#include "mysql.c"
 #include "net_UDP.c"
 
 unsigned long long  timee() {
@@ -90,7 +90,9 @@ int main(void)
     if(file_activate) pthread_create(&file_thread, NULL, file_management, NULL);
     if(serial_activate) pthread_create(&serial_thread, NULL, serial_listen, NULL);
     if (mysql_activate) pthread_create(&mysql_thread, NULL, mysql_log, NULL);
-    pthread_join(serial_thread, NULL);
+
+    if(tcp_activation) pthread_create(&tcp_thread, NULL, tcp_server, NULL);
+    pthread_join(mysql_thread, NULL);
     if(serial_activate) pthread_join(serial_thread, NULL);
     if (udp_activate) pthread_join(udp_thread, NULL);
     if(serial_activate) close(fd);

@@ -52,8 +52,8 @@ void socket_initialize() {
 void UDP_send(char *hello, int leng) {
     bzero(&cliaddr, sizeof(cliaddr));
     cliaddr.sin_family = AF_INET;
-    cliaddr.sin_port = htons(7070);
-    cliaddr.sin_addr.s_addr = inet_addr("172.20.10.3");
+    cliaddr.sin_port = htons(7071);
+    cliaddr.sin_addr.s_addr = inet_addr("192.168.3.4");
     sendto(sockfd, (const char *)hello, leng, 0, (const struct sockaddr *) &cliaddr, sizeof(cliaddr));
 }
 
