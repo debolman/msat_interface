@@ -1,13 +1,41 @@
 #include "my_host.c"
 static void print_hello (GtkWidget *widget, gpointer   data)
 {
-  g_print ("Heuuul\n");
+    unsigned char buf[3];
+           buf[0] = 0x30;
+           buf[1] = 1;
+           buf[2] = 0x26;
+           UDP_send(buf,3);
+           sent_counter++;
+           char a[30];
+           sprintf(a,"%d",sent_counter);
+           gtk_label_set_text(GTK_LABEL(sent_pkt)  ,a);
+
+    sprintf(a,"%d",sent_counter-recv_counter);
+    gtk_label_set_text(GTK_LABEL(diff_pkt)  ,a);
+    
+}
+
+
+static void send_10 (GtkWidget *widget, gpointer   data)
+{
     char a[30];
-    int b = 124;
-    sprintf(a,"%d",b);
-    //gtk_label_set_text(GTK_LABEL(label3)  ,"hio");
-    sprintf(a,"%d",udp_serv_port);
-  }
+    sprintf(a,"%d",0);
+    recv_counter = 0;
+    gtk_label_set_text(GTK_LABEL(recv_pkt)  ,a);
+    gtk_label_set_text(GTK_LABEL(diff_pkt)  ,a);
+    unsigned char buf[3];
+           buf[0] = 0x31;
+           buf[1] = 1;
+           buf[2] = 0x26;
+           UDP_send(buf,3);
+           sprintf(a,"%d",10);
+           gtk_label_set_text(GTK_LABEL(sent_pkt)  ,a);
+    sent_counter = 10;
+    sprintf(a,"%d",sent_counter-recv_counter);
+    gtk_label_set_text(GTK_LABEL(diff_pkt)  ,a);
+    
+}
 
 static void activate_bool (GObject    *switcher,GParamSpec *pspec, gpointer    user_data) {
     bool *pun =user_data;
@@ -38,6 +66,7 @@ static void activate_serial_switch (GObject    *switcher, GParamSpec *pspec, gpo
             
     if (gtk_switch_get_active (GTK_SWITCH (switcher))) {
         serial_initialize();
+        pthread_create(&serial_thread, NULL, serial_listen, NULL);
     }
     else {
         close(fd);
@@ -50,6 +79,7 @@ static void activate_udp_switch (GObject    *switcher, GParamSpec *pspec, gpoint
     if (gtk_switch_get_active (GTK_SWITCH (switcher))) {
         socket_initialize();
         pthread_create(&udp_thread, NULL, UDP_listener, NULL);
+        gtk_label_set_text(GTK_LABEL(ip_l)  ,hos(0));
     }
     else {
         close(sockfd);
@@ -77,7 +107,7 @@ static void layout_rx() {
        gtk_container_add (GTK_CONTAINER (box_itm), label);
        snr_v = gtk_label_new ("");
        gtk_container_add (GTK_CONTAINER (box_itm), snr_v);
-    
+
     box_itm = gtk_box_new (GTK_ORIENTATION_HORIZONTAL,5);
     gtk_box_set_homogeneous(GTK_BOX(box_itm),TRUE);
     gtk_container_add (GTK_CONTAINER (box), box_itm);
@@ -87,6 +117,27 @@ static void layout_rx() {
     freq_err_v = gtk_label_new ("");
     gtk_container_add (GTK_CONTAINER (box_itm), freq_err_v);
     
+    box_itm = gtk_box_new (GTK_ORIENTATION_HORIZONTAL,5);
+    gtk_box_set_homogeneous(GTK_BOX(box_itm),TRUE);
+    gtk_container_add (GTK_CONTAINER (box), box_itm);
+    label = gtk_label_new ("Millis");
+    gtk_widget_set_halign(label, GTK_ALIGN_END);
+    gtk_container_add (GTK_CONTAINER (box_itm), label);
+    millis_v_r = gtk_label_new ("");
+    gtk_container_add (GTK_CONTAINER (box_itm), millis_v_r);
+    
+    box_itm = gtk_box_new (GTK_ORIENTATION_HORIZONTAL,5);
+    gtk_box_set_homogeneous(GTK_BOX(box_itm),TRUE);
+    gtk_container_add (GTK_CONTAINER (box), box_itm);
+    act_recvd_pkt = gtk_label_new ("");
+    gtk_widget_set_halign(label, GTK_ALIGN_END);
+    gtk_container_add (GTK_CONTAINER (box_itm), act_recvd_pkt);
+    sent_pkt = gtk_label_new ("");
+    gtk_container_add (GTK_CONTAINER (box_itm), sent_pkt);
+    recv_pkt = gtk_label_new ("");
+    gtk_container_add (GTK_CONTAINER (box_itm), recv_pkt);
+    diff_pkt = gtk_label_new ("");
+    gtk_container_add (GTK_CONTAINER (box_itm), diff_pkt);
     
        gtk_container_add (GTK_CONTAINER (frame), box);
        gtk_container_add (GTK_CONTAINER (box_main), frame);
@@ -115,7 +166,7 @@ static void layout_tx() {
        label = gtk_label_new ("PA");
        gtk_container_add (GTK_CONTAINER (box_itm), label);
        switch_pa = gtk_switch_new ();
-       g_signal_connect (GTK_SWITCH (switch_pa), "notify::active", G_CALLBACK (activate_pa), &tcp_raw);
+       //g_signal_connect (GTK_SWITCH (switch_pa), "notify::active", G_CALLBACK (activate_pa), &tcp_raw);
        gtk_container_add (GTK_CONTAINER (box_itm), switch_pa);
        gtk_container_add (GTK_CONTAINER (box), box_itm);
 
@@ -123,7 +174,7 @@ static void layout_tx() {
        gtk_box_set_homogeneous(GTK_BOX(box_itm),TRUE);
 
     pwr_sca = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 0,20,1);
-    g_signal_connect (pwr_sca,"value-changed",G_CALLBACK (vscale_moved),label);
+    //g_signal_connect (pwr_sca,"value-changed",G_CALLBACK (vscale_moved),label);
         gtk_container_add (GTK_CONTAINER (box), pwr_sca);
        gtk_container_add (GTK_CONTAINER (box), box_itm);
     
@@ -141,8 +192,8 @@ static void layout_payload() {
     label = gtk_label_new ("Millis");
     gtk_widget_set_halign(label, GTK_ALIGN_END);
     gtk_container_add (GTK_CONTAINER (box_itm), label);
-    millis_v = gtk_label_new ("");
-    gtk_container_add (GTK_CONTAINER (box_itm), millis_v);
+    millis_v_p = gtk_label_new ("");
+    gtk_container_add (GTK_CONTAINER (box_itm), millis_v_p);
     gtk_container_add (GTK_CONTAINER (box), box_itm);
     
        gtk_container_add (GTK_CONTAINER (frame), box);
@@ -171,7 +222,9 @@ static void layout_config() {
     gtk_widget_set_halign(label, GTK_ALIGN_END);
     gtk_container_add (GTK_CONTAINER (box_itm), label);
     udp_act_s = gtk_switch_new ();
+    
     g_signal_connect (GTK_SWITCH (udp_act_s), "notify::active", G_CALLBACK (activate_udp_switch), &udp_raw);
+    gtk_switch_set_state(GTK_SWITCH(udp_act_s),udp_activate);
     gtk_container_add (GTK_CONTAINER (box_itm), udp_act_s);
     gtk_container_add (GTK_CONTAINER (box), box_itm);
     
@@ -230,6 +283,8 @@ static void layout_config() {
     gtk_container_add (GTK_CONTAINER (box_itm), label);
     serial_act_s = gtk_switch_new ();
     g_signal_connect (GTK_SWITCH (serial_act_s), "notify::active", G_CALLBACK (activate_serial_switch), &tcp_raw);
+    gtk_switch_set_state(GTK_SWITCH(serial_act_s),serial_activate);
+    
     gtk_container_add (GTK_CONTAINER (box_itm), serial_act_s);
     gtk_container_add (GTK_CONTAINER (box), box_itm);
     
@@ -253,31 +308,17 @@ static void layout_config() {
     gtk_container_add (GTK_CONTAINER (box_itm), serial_raw_switch);
     gtk_container_add (GTK_CONTAINER (box), box_itm);
     
-    box_itm = gtk_box_new (GTK_ORIENTATION_HORIZONTAL,middle_space);
-    gtk_box_set_homogeneous(GTK_BOX(box_itm),TRUE);
-    label = gtk_label_new ("IP");
-    gtk_widget_set_halign(label, GTK_ALIGN_END);
-    gtk_container_add (GTK_CONTAINER (box_itm), label);
-    ip_l = gtk_label_new ("");
-    gtk_container_add (GTK_CONTAINER (box_itm), ip_l);
-    gtk_container_add (GTK_CONTAINER (box), box_itm);
-    
-    box_itm = gtk_box_new (GTK_ORIENTATION_HORIZONTAL,middle_space);
-    gtk_box_set_homogeneous(GTK_BOX(box_itm),TRUE);
-    label = gtk_label_new ("IP");
-    gtk_widget_set_halign(label, GTK_ALIGN_END);
-    gtk_container_add (GTK_CONTAINER (box_itm), label);
-    ip_l2 = gtk_label_new ("");
-    gtk_container_add (GTK_CONTAINER (box_itm), ip_l2);
-    gtk_container_add (GTK_CONTAINER (box), box_itm);
        gtk_container_add (GTK_CONTAINER (frame), box);
        gtk_container_add (GTK_CONTAINER (box_main), frame);
 }
 
 static void layout() {
     box_main = gtk_box_new (GTK_ORIENTATION_VERTICAL,15);
-    button = gtk_button_new_with_label ("test");
+    button = gtk_button_new_with_label ("Send single");
     g_signal_connect (button, "clicked", G_CALLBACK (print_hello), NULL);
+    gtk_box_pack_start (GTK_BOX (box_main), button, FALSE, FALSE,0);
+    button = gtk_button_new_with_label ("Send 10 times");
+    g_signal_connect (button, "clicked", G_CALLBACK (send_10), NULL);
     gtk_box_pack_start (GTK_BOX (box_main), button, FALSE, FALSE,0);
     gtk_container_set_border_width(GTK_CONTAINER(box_main),10);
     gtk_container_add (GTK_CONTAINER (window), box_main);
@@ -293,22 +334,20 @@ void show_configuration() {
     gtk_label_set_text(GTK_LABEL(ser_pkt_size_v)  ,a);
     sprintf(a,"%d",tcp_serv_port);
     gtk_label_set_text(GTK_LABEL(tcp_serv_port_v)  ,a);
-    gtk_label_set_text(GTK_LABEL(ip_l)  ,hos(0));
-    gtk_label_set_text(GTK_LABEL(ip_l2)  ,hos(1));
     gtk_switch_set_state(GTK_SWITCH(udp_raw_switch),serial_raw);
     gtk_switch_set_state(GTK_SWITCH(serial_raw_switch),udp_raw);
     gtk_switch_set_state(GTK_SWITCH(tcp_raw_switch),tcp_raw);
-    gtk_switch_set_state(GTK_SWITCH(udp_act_s),udp_activate);
     gtk_switch_set_state(GTK_SWITCH(tcp_act_s),tcp_activation);
-    gtk_switch_set_state(GTK_SWITCH(serial_act_s),serial_activate);
 }
 
 static void activate (GtkApplication *app, gpointer    user_data)
 {
+    static gboolean key_pressed = FALSE, *p_key_pressed = &key_pressed;
+    
     gint tmp_pos;
   window = gtk_application_window_new (app);
   gtk_window_set_title (GTK_WINDOW (window), "Interface");
-  gtk_window_set_default_size (GTK_WINDOW (window), 180, 200);
+  gtk_window_set_default_size (GTK_WINDOW (window), 160, 200);
 
 layout();
     layout_config();
@@ -317,6 +356,9 @@ layout_tx();
 layout_payload();
   gtk_widget_show_all (window);
     show_configuration();
+    green();
+           printf("GUI active\n");
+           normal();
 }
 
 void GUI_act ()

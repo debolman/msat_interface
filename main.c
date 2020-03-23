@@ -24,15 +24,16 @@
 #include <sys/time.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include <mysql.h>
 #include <netdb.h>
 #include "main.h"
 #include "serial.c"
-#include "mysql.c"
+#include "lora.c"
 #include "net_UDP.c"
-#ifdef GUI_activation
+#include "net_TCP.c"
 #include "gtk.c"
-#endif
+#include <mysql.h>
+#include "mysql.c"
+
 unsigned long long  timee() {
     struct timeval tv;
     gettimeofday(&tv, NULL);
@@ -43,7 +44,7 @@ unsigned long long  timee() {
 }
 
 void commands_strings() {
-    strcpy(command[0], "udp");
+    strcpy(command[0], "s");
     strcpy(command[1], "udp off");
     strcpy(command[2], "serial");
     strcpy(command[3], "serial off");
@@ -52,6 +53,9 @@ void commands_strings() {
 
 
 void *timer() {
+    green();
+    printf("Clock running\n");
+    normal();
     while(1) {
 //        //unsigned long long diff;
 //        //diff = timee()-toc;
@@ -61,13 +65,25 @@ void *timer() {
 //        }
 //        fflush(stdout);
         usleep(1000000);
+        if(GUI_activation) {
         struct timeval tv;
         gettimeofday(&tv, NULL);
              char a[30];
         sprintf(a,"%llu",(unsigned long long)(tv.tv_sec));
         gtk_label_set_text(GTK_LABEL(unix_time_l)  ,a);
+        }
     }
 }
+
+void red() {printf("%s", KRED);}
+void green() {printf("%s", KGRN);}
+void yellow() {printf("%s", KYEL);}
+void blue() {printf("%s", KBLU);}
+void magenta() {printf("%s", KMAG);}
+void cyan() {printf("%s", KCYN);}
+void white() {printf("%s", KWHT);}
+void normal() {printf("%s", KNRM);}
+
 
 void *file_management() {
     printf("open \n");
@@ -90,22 +106,25 @@ void *file_management() {
 
 int main(void)
 {
+    green();
+    printf("Hello! ");
+    if(GUI_activation) printf("GUI ON\n");
+        else printf("GUI OFF\n");
+    normal();
     toc = 0;
 	commands_strings();
     pthread_create(&timer_thread, NULL, timer, NULL);
-    if(serial_activate) serial_initialize();
-    //if (udp_activate) socket_initialize();
-    //if (GUI_activation) pthread_create(&GUI_thread, NULL, GUI_act, NULL);
-    //if (udp_activate) pthread_create(&udp_thread, NULL, UDP_listener, NULL);
+    if(serial_activate && !GUI_activation) serial_initialize();
+    if (udp_activate && !GUI_activation) socket_initialize();
+    if (udp_activate && !GUI_activation) pthread_create(&udp_thread, NULL, UDP_listener, NULL);
     if(file_activate) pthread_create(&file_thread, NULL, file_management, NULL);
-    if(serial_activate) pthread_create(&serial_thread, NULL, serial_listen, NULL);
-    if (mysql_activate) pthread_create(&mysql_thread, NULL, mysql_log, NULL);
+    if(serial_activate && !GUI_activation) pthread_create(&serial_thread, NULL, serial_listen, NULL);
+    //if (mysql_activate) pthread_create(&mysql_thread, NULL, mysql_log, NULL);
 
-    if(tcp_activation) pthread_create(&tcp_thread, NULL, tcp_server, NULL);
 
-    #ifdef GUI_activation
-    GUI_act();
-#endif
+
+    if (GUI_activation) GUI_act();
+
     pthread_join(mysql_thread, NULL);
     if(serial_activate) pthread_join(serial_thread, NULL);
     if (udp_activate) pthread_join(udp_thread, NULL);

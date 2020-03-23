@@ -18,11 +18,11 @@
 #include <stdbool.h>
 #include <netdb.h>
 
-
-
-
 void *UDP_listener(void *vargp)
 {
+    green();
+    printf("UDP listening\n");
+    normal();
     while(true) {
         socklen_t len;
         int UDP_recved_len = recvfrom(sockfd, udp_buffer, sizeof(udp_buffer), 0, (struct sockaddr*)&cliaddr,&len);
@@ -34,27 +34,27 @@ void *UDP_listener(void *vargp)
             if(udp_buffer[0] == 0x50) {
                 memcpy(&tlm, udp_buffer,UDP_recved_len);
                 //printf("%d \n", tlm.rssi);
-                char a[30];
-                sprintf(a,"%d",tlm.rssi);
-                gtk_label_set_text(GTK_LABEL(rssi_v)  ,a);
-                sprintf(a,"%d",tlm.snr);
-                gtk_label_set_text(GTK_LABEL(snr_v)  ,a);
-                sprintf(a,"%d",tlm.milis);
-                gtk_label_set_text(GTK_LABEL(millis_v)  ,a);
-                sprintf(a,"%d",tlm.freq_er_hz);
-                gtk_label_set_text(GTK_LABEL(freq_err_v)  ,a);
-            }
+                
         }
         if(serial_activate) {   int wrote_bytes =  write(fd,&udp_buffer,UDP_recved_len);
         }
+        }
+        
     }
 }
 
 
 void socket_initialize() {
     if ( (sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) {
-        perror("socket creation failed");
+        red();
+        printf("Socket creation failed");
+        normal();
         exit(EXIT_FAILURE);
+    }
+    else {
+        green();
+        printf("UDP socket activated\n");
+        normal();
     }
     bzero(&servaddr, sizeof(servaddr));
     servaddr.sin_family = AF_INET; // IPv4
@@ -62,7 +62,9 @@ void socket_initialize() {
     servaddr.sin_port = htons(udp_serv_port);
     if ( bind(sockfd, (const struct sockaddr *)&servaddr, sizeof(servaddr)) < 0 )
     {
-        perror("bind failed");
+        red();
+        printf("bind failed\n");
+        normal();
         exit(EXIT_FAILURE);
     }
 }

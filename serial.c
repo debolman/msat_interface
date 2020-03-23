@@ -19,8 +19,18 @@
 #include <netdb.h>
 
 void serial_initialize() {
+
     fd = open("/dev/cu.usbmodem14601",O_RDWR );
-    if(fd == -1) printf("\n  Error! in Opening ttyUSB0  ");
+    if(fd == -1) {
+        red();
+        printf("Serial port error\n");
+        normal();
+    }
+    else {
+        green();
+        printf("Serial port opened\n");
+        normal();
+    }
     struct termios SerialPortSettings;
     tcgetattr(fd, &SerialPortSettings);
     cfsetispeed(&SerialPortSettings,B9600);
@@ -41,6 +51,9 @@ void serial_initialize() {
 
 void *serial_listen(void *vargp)
 {
+    green();
+    printf("Serial listening\n");
+    normal();
     while(true) {
         tcflush(fd, TCIFLUSH);
         unsigned char read_buffer[pkt_size];
@@ -53,26 +66,23 @@ void *serial_listen(void *vargp)
                 for(int n =0;n< bytes_read;n++)
                     printf("%02X ",read_buffer[n]);
                 printf("\n");
-                //system("echo -e "\a"");
-            }
-            if(read_buffer[0] == 0x77) {
-                tic = timee();
-                printf("%llu \n", tic);
-                
-                toc = tic;
             }
             if(read_buffer[0] == 0x50) {
+                printf("chjk");
                 memcpy(&tlm, read_buffer,bytes_read);
-                //printf("%d \n", tlm.rssi);
+                if(GUI_activation) {
+                decode_tlm();
+                recv_counter++;
                 char a[30];
+                sprintf(a,"%d",recv_counter);
+                gtk_label_set_text(GTK_LABEL(recv_pkt)  ,a);
+                sprintf(a,"%d",sent_counter-recv_counter);
+                gtk_label_set_text(GTK_LABEL(diff_pkt)  ,a);
                 sprintf(a,"%d",tlm.rssi);
-                gtk_label_set_text(GTK_LABEL(rssi_v)  ,a);
-                sprintf(a,"%d",tlm.snr);
-                gtk_label_set_text(GTK_LABEL(snr_v)  ,a);
-                sprintf(a,"%d",tlm.milis);
-                gtk_label_set_text(GTK_LABEL(millis_v)  ,a);
-                sprintf(a,"%d",tlm.freq_er_hz);
-                gtk_label_set_text(GTK_LABEL(freq_err_v)  ,a);
+                gtk_label_set_text(GTK_LABEL(act_recvd_pkt)  ,"PKT!");
+                usleep(300000);
+                gtk_label_set_text(GTK_LABEL(act_recvd_pkt)  ,"");
+                }
             }
         }
         usleep(10000);
