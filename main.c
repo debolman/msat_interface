@@ -94,9 +94,9 @@ int main(void)
 	commands_strings();
     pthread_create(&timer_thread, NULL, timer, NULL);
     if(serial_activate) serial_initialize();
-    if (udp_activate) socket_initialize();
+    //if (udp_activate) socket_initialize();
     //if (GUI_activation) pthread_create(&GUI_thread, NULL, GUI_act, NULL);
-    if (udp_activate) pthread_create(&udp_thread, NULL, UDP_listener, NULL);
+    //if (udp_activate) pthread_create(&udp_thread, NULL, UDP_listener, NULL);
     if(file_activate) pthread_create(&file_thread, NULL, file_management, NULL);
     if(serial_activate) pthread_create(&serial_thread, NULL, serial_listen, NULL);
     if (mysql_activate) pthread_create(&mysql_thread, NULL, mysql_log, NULL);

@@ -49,6 +49,7 @@ static void activate_udp_switch (GObject    *switcher, GParamSpec *pspec, gpoint
             
     if (gtk_switch_get_active (GTK_SWITCH (switcher))) {
         socket_initialize();
+        pthread_create(&udp_thread, NULL, UDP_listener, NULL);
     }
     else {
         close(sockfd);

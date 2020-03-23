@@ -41,9 +41,9 @@ GtkWidget  *serial_act_s,  *serial_raw_switch, *ser_pkt_size_v, *serial_act_s;
 #define udp_serv_port    6070
 #define tcp_serv_port    6080
 
-#define serial_activate true
+#define serial_activate false
 #define tcp_activation  false
-#define udp_activate    true
+#define udp_activate    false
 #define ram_allocation  false
 #define mysql_activate  false
 #define file_activate   false
