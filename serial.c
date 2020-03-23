@@ -19,7 +19,7 @@
 #include <netdb.h>
 
 void serial_initialize() {
-    fd = open("/dev/cu.usbmodem14201",O_RDWR );
+    fd = open("/dev/cu.usbmodem14601",O_RDWR );
     if(fd == -1) printf("\n  Error! in Opening ttyUSB0  ");
     struct termios SerialPortSettings;
     tcgetattr(fd, &SerialPortSettings);
@@ -47,11 +47,11 @@ void *serial_listen(void *vargp)
         bytes_read = read(fd,&read_buffer,pkt_size);
         
         //printf("%d %d %d %d \n",  bytes_read, read_buffer[0], read_buffer[1], read_buffer[2]);
-        if(udp_activate) UDP_send(read_buffer,bytes_read);
+        //if(udp_activate) UDP_send(read_buffer,bytes_read);
         if(bytes_read >0) {
             if(serial_raw) {
                 for(int n =0;n< bytes_read;n++)
-                    printf("%c ",read_buffer[n]);
+                    printf("%02X ",read_buffer[n]);
                 printf("\n");
                 //system("echo -e "\a"");
             }
@@ -60,6 +60,19 @@ void *serial_listen(void *vargp)
                 printf("%llu \n", tic);
                 
                 toc = tic;
+            }
+            if(read_buffer[0] == 0x50) {
+                memcpy(&tlm, read_buffer,bytes_read);
+                //printf("%d \n", tlm.rssi);
+                char a[30];
+                sprintf(a,"%d",tlm.rssi);
+                gtk_label_set_text(GTK_LABEL(rssi_v)  ,a);
+                sprintf(a,"%d",tlm.snr);
+                gtk_label_set_text(GTK_LABEL(snr_v)  ,a);
+                sprintf(a,"%d",tlm.milis);
+                gtk_label_set_text(GTK_LABEL(millis_v)  ,a);
+                sprintf(a,"%d",tlm.freq_er_hz);
+                gtk_label_set_text(GTK_LABEL(freq_err_v)  ,a);
             }
         }
         usleep(10000);

@@ -30,8 +30,9 @@
 #include "serial.c"
 #include "mysql.c"
 #include "net_UDP.c"
+#ifdef GUI_activation
 #include "gtk.c"
-
+#endif
 unsigned long long  timee() {
     struct timeval tv;
     gettimeofday(&tv, NULL);
@@ -52,14 +53,19 @@ void commands_strings() {
 
 void *timer() {
     while(1) {
-        unsigned long long diff;
-        diff = timee()-toc;
-        //printf("%lu %lu %lu\n",tic, toc, diff);
-        if(diff>4000) {
-        printf("\rlost: %llu",diff/3450);
-        }
-        fflush(stdout);
+//        //unsigned long long diff;
+//        //diff = timee()-toc;
+//        //printf("%lu %lu %lu\n",tic, toc, diff);
+//        if(diff>4000) {
+//        printf("\rlost: %llu",diff/3450);
+//        }
+//        fflush(stdout);
         usleep(1000000);
+        struct timeval tv;
+        gettimeofday(&tv, NULL);
+             char a[30];
+        sprintf(a,"%llu",(unsigned long long)(tv.tv_sec));
+        gtk_label_set_text(GTK_LABEL(unix_time_l)  ,a);
     }
 }
 
@@ -96,7 +102,10 @@ int main(void)
     if (mysql_activate) pthread_create(&mysql_thread, NULL, mysql_log, NULL);
 
     if(tcp_activation) pthread_create(&tcp_thread, NULL, tcp_server, NULL);
+
+    #ifdef GUI_activation
     GUI_act();
+#endif
     pthread_join(mysql_thread, NULL);
     if(serial_activate) pthread_join(serial_thread, NULL);
     if (udp_activate) pthread_join(udp_thread, NULL);
