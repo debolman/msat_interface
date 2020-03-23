@@ -30,7 +30,6 @@
 #include "lora.c"
 #include "net_UDP.c"
 #include "net_TCP.c"
-#include "gtk.c"
 #include <mysql.h>
 #include "mysql.c"
 
@@ -65,13 +64,6 @@ void *timer() {
 //        }
 //        fflush(stdout);
         usleep(1000000);
-        if(GUI_activation) {
-        struct timeval tv;
-        gettimeofday(&tv, NULL);
-             char a[30];
-        sprintf(a,"%llu",(unsigned long long)(tv.tv_sec));
-        gtk_label_set_text(GTK_LABEL(unix_time_l)  ,a);
-        }
     }
 }
 
@@ -114,14 +106,15 @@ int main(void)
     toc = 0;
 	commands_strings();
     pthread_create(&timer_thread, NULL, timer, NULL);
-    if(serial_activate && !GUI_activation) serial_initialize();
-    if (udp_activate && !GUI_activation) socket_initialize();
-    if (udp_activate && !GUI_activation) pthread_create(&udp_thread, NULL, UDP_listener, NULL);
+    if(serial_activate) serial_initialize();
+    if (udp_activate) socket_initialize();
+    if (udp_activate) pthread_create(&udp_thread, NULL, UDP_listener, NULL);
     if(file_activate) pthread_create(&file_thread, NULL, file_management, NULL);
-    if(serial_activate && !GUI_activation) pthread_create(&serial_thread, NULL, serial_listen, NULL);
-    //if (mysql_activate) pthread_create(&mysql_thread, NULL, mysql_log, NULL);
+    if(serial_activate) pthread_create(&serial_thread, NULL, serial_listen, NULL);
+    if (mysql_activate) pthread_create(&mysql_thread, NULL, mysql_log, NULL);
 
-
+    
+    if(tcp_activation) pthread_join(tcp_thread, NULL);
 
     if (GUI_activation) GUI_act();
 

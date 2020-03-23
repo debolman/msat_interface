@@ -25,7 +25,6 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <netdb.h>
-#include <gtk/gtk.h>
 #include <mysql.h>
 
 const bool  serial_activate = true;
@@ -34,14 +33,6 @@ const bool  udp_activate   =  true;
 const bool  ram_allocation  = false;
 const bool  mysql_activate =  false;
 const bool  file_activate  =  false;
-const bool  GUI_activation  = true;
-
-GtkWidget  *box_itm, *window, *box_pay, *frame, *box_main, *box;
-GtkWidget  *pwr_v, *snr_v, *button, *switcher, *rssi_v, *label, *switch_pa, *pwr_sca, *ip_l, *ip_l2, *ip_l3, *freq_err_v,  *unix_time_l;
-GtkWidget  *udp_serv_port_v, *udp_raw_switch, *udp_act_s;
-GtkWidget  *tcp_serv_port_v, *tcp_raw_switch, *tcp_act_s;
-GtkWidget  *serial_act_s,  *serial_raw_switch, *ser_pkt_size_v, *serial_act_s;
-GtkWidget *lora_rcved, *act_recvd_pkt, *sent_pkt, *recv_pkt, *diff_pkt, *millis_v_p, *millis_v_r;
 
 #define MAXEVENTS 64
 #define pkt_size  44

@@ -70,19 +70,6 @@ void *serial_listen(void *vargp)
             if(read_buffer[0] == 0x50) {
                 printf("chjk");
                 memcpy(&tlm, read_buffer,bytes_read);
-                if(GUI_activation) {
-                decode_tlm();
-                recv_counter++;
-                char a[30];
-                sprintf(a,"%d",recv_counter);
-                gtk_label_set_text(GTK_LABEL(recv_pkt)  ,a);
-                sprintf(a,"%d",sent_counter-recv_counter);
-                gtk_label_set_text(GTK_LABEL(diff_pkt)  ,a);
-                sprintf(a,"%d",tlm.rssi);
-                gtk_label_set_text(GTK_LABEL(act_recvd_pkt)  ,"PKT!");
-                usleep(300000);
-                gtk_label_set_text(GTK_LABEL(act_recvd_pkt)  ,"");
-                }
             }
         }
         usleep(10000);
