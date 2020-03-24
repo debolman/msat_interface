@@ -27,8 +27,7 @@
 #include <netdb.h>
 #include <mysql.h>
 
-const bool  serial_activate = true;
-const bool  tcp_activation  = false;
+const bool  serial_activate = false;
 const bool  udp_activate   =  true;
 const bool  ram_allocation  = false;
 const bool  mysql_activate =  false;
@@ -51,13 +50,12 @@ const bool  file_activate  =  false;
 
 
 MYSQL *con;
-int fd, fo, bytes_read, sockfd, len;
+int fd, fo, bytes_read, sockfd, socket_fd, len;
 struct  tm *ts;
 unsigned char udp_buffer[MAXLINE];
 char command[10][32];
 bool serial_raw = false;
-bool udp_raw = false;
-bool tcp_raw = false;
+bool udp_raw = true;
 pthread_t serial_thread, udp_thread, udp_sample_thread, mysql_thread,log_thread, tcp_thread, file_thread, timer_thread, GUI_thread;
 struct timeb timer_msec;
 long long int timestamp_msec, t_o, t_n, t_d;

@@ -46,7 +46,11 @@ void serial_initialize() {
     SerialPortSettings.c_oflag &= ~OPOST;
     SerialPortSettings.c_cc[VMIN] = pkt_size;//pkt_size;
     SerialPortSettings.c_cc[VTIME] = 1;
-    if((tcsetattr(fd,TCSANOW,&SerialPortSettings)) != 0) printf("\n  ERROR ! in Setting attributes");
+    if((tcsetattr(fd,TCSANOW,&SerialPortSettings)) != 0) {
+        red();
+        printf("ERROR ! in Setting attributes\n");
+        normal();
+    }
 }
 
 void *serial_listen(void *vargp)

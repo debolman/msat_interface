@@ -27,9 +27,7 @@
 #include <netdb.h>
 #include "main.h"
 #include "serial.c"
-#include "lora.c"
 #include "net_UDP.c"
-#include "net_TCP.c"
 #include <mysql.h>
 #include "mysql.c"
 
@@ -48,23 +46,6 @@ void commands_strings() {
     strcpy(command[2], "serial");
     strcpy(command[3], "serial off");
     strcpy(command[4], "close");
-}
-
-
-void *timer() {
-    green();
-    printf("Clock running\n");
-    normal();
-    while(1) {
-//        //unsigned long long diff;
-//        //diff = timee()-toc;
-//        //printf("%lu %lu %lu\n",tic, toc, diff);
-//        if(diff>4000) {
-//        printf("\rlost: %llu",diff/3450);
-//        }
-//        fflush(stdout);
-        usleep(1000000);
-    }
 }
 
 void red() {printf("%s", KRED);}
@@ -96,16 +77,11 @@ void *file_management() {
     return 0;
 }
 
-int main(void)
-{
+int main(void) {
     green();
-    printf("Hello! ");
-    if(GUI_activation) printf("GUI ON\n");
-        else printf("GUI OFF\n");
+    printf("Hello!\n");
     normal();
-    toc = 0;
 	commands_strings();
-    pthread_create(&timer_thread, NULL, timer, NULL);
     if(serial_activate) serial_initialize();
     if (udp_activate) socket_initialize();
     if (udp_activate) pthread_create(&udp_thread, NULL, UDP_listener, NULL);
@@ -113,16 +89,10 @@ int main(void)
     if(serial_activate) pthread_create(&serial_thread, NULL, serial_listen, NULL);
     if (mysql_activate) pthread_create(&mysql_thread, NULL, mysql_log, NULL);
 
-    
-    if(tcp_activation) pthread_join(tcp_thread, NULL);
-
-    if (GUI_activation) GUI_act();
-
-    pthread_join(mysql_thread, NULL);
+    //pthread_join(mysql_thread, NULL);
     if(serial_activate) pthread_join(serial_thread, NULL);
     if (udp_activate) pthread_join(udp_thread, NULL);
     if(serial_activate) close(fd);
     if (udp_activate) close(sockfd);
 }
-
 
