@@ -37,7 +37,7 @@ const bool  file_activate  =  false;
 #define pkt_size  44
 #define diff_size 1
 #define MAXLINE 1024
-#define udp_serv_port    6070
+#define udp_serv_port    7072
 #define tcp_serv_port    6080
 #define KNRM  "\x1B[0m"
 #define KRED  "\x1B[31m"
@@ -55,7 +55,7 @@ struct  tm *ts;
 unsigned char udp_buffer[MAXLINE];
 char command[10][32];
 bool serial_raw = false;
-bool udp_raw = true;
+bool udp_raw = false;
 pthread_t serial_thread, udp_thread, udp_sample_thread, mysql_thread,log_thread, tcp_thread, file_thread, timer_thread, GUI_thread;
 struct timeb timer_msec;
 long long int timestamp_msec, t_o, t_n, t_d;
@@ -100,6 +100,37 @@ void green();
 void yellow();
 void blue();
 void magenta();
+void print_green();
 void cyan();
 void white() ;
 void normal() ;
+void UDP_send_f(unsigned char *hello, int leng) ;
+void write_wo_connection( int a, int b, int c, int d, int e, int f, int g, int h, int i, int j);
+
+struct parameters {
+  int8_t id;
+  int8_t SF;
+  int8_t coding;
+  int8_t crc;
+  int8_t pwr_db;
+  int8_t pwr_pa;
+  int8_t band_i;
+  int8_t freq_i;
+  int8_t beacon;
+    int32_t milis;
+} param;
+
+
+struct parameter {
+  int8_t id;
+    int8_t id1;
+    int8_t id2;
+    int8_t id3;
+  float V5_v;
+  float V5_i;
+  float V5_p;
+  float V12_v;
+  float V12_i;
+  float V12_p;
+  int32_t milis;
+} param_green;

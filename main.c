@@ -87,9 +87,9 @@ int main(void) {
     if (udp_activate) pthread_create(&udp_thread, NULL, UDP_listener, NULL);
     if(file_activate) pthread_create(&file_thread, NULL, file_management, NULL);
     if(serial_activate) pthread_create(&serial_thread, NULL, serial_listen, NULL);
-    if (mysql_activate) pthread_create(&mysql_thread, NULL, mysql_log, NULL);
-
-    //pthread_join(mysql_thread, NULL);
+    //if (mysql_activate) pthread_create(&mysql_thread, NULL, mysql_log, NULL);
+    if (mysql_activate) mysql_connection();
+    pthread_join(mysql_thread, NULL);
     if(serial_activate) pthread_join(serial_thread, NULL);
     if (udp_activate) pthread_join(udp_thread, NULL);
     if(serial_activate) close(fd);

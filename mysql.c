@@ -47,12 +47,12 @@ void finish_with_error(MYSQL *con)
   exit(1);
 }
 
-void write_wo_connection(int count, unsigned long long unixtime) {
+void write_wo_connection( int a, int b, int c, int d, int e, int f, int g, int h, int i, int j) {
     char buf[1024] = {};
-    char query_string[] = {  "INSERT INTO carr VALUES (%d,%d,%llu)" };
-        int a = time(NULL);
-        
-        sprintf(buf, query_string,count,a,unixtime);
+    char query_string[] = {  "INSERT INTO carr VALUES (%llu,%d,%d,%d,%d,%d,%d,%d,%d,%d, %d)" };
+        int tim = time(NULL);
+    j = j/1000;
+        sprintf(buf, query_string,tim,a,b,c,d,e,f,g,h,i,j);
         if (mysql_query(con,buf)) finish_with_error(con);
 }
 
@@ -76,7 +76,7 @@ void mysql_connection() {
 
 
 void *log_thd() {
-    write_wo_connection(counter,timee());
+    //write_wo_connection(counter,timee());
     counter++;
     return 0;
 }
@@ -85,11 +85,11 @@ void *mysql_log() {
     mysql_connection();
     unsigned long long before = 0;
     while(1) {
-        if (timee() - before > 99 ) {
+        if (timee() - before > 199 ) {
         pthread_create(&log_thread, NULL, log_thd, NULL);
             before = timee();
               }
-        //usleep(1);
+        //usleep(10000);
     }
     mysql_close(con);
 }
