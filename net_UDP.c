@@ -21,7 +21,7 @@
 void *UDP_listener(void *vargp)
 {
     green();
-    printf("and listening on port %d\n", udp_serv_port);
+    printf(" and listening on port %d\n", udp_serv_port);
     normal();
     while(true) {
         socklen_t len;
@@ -40,9 +40,9 @@ void *UDP_listener(void *vargp)
                 
                 
         }
-            if(udp_buffer[1] == 0x71) {
-                    memcpy(&param_green, udp_buffer+1,UDP_recved_len);
-                    
+            if(udp_buffer[0] == 0x71) {
+                    memcpy(&param_green, udp_buffer,UDP_recved_len);
+
                     //write_wo_connection(param.id,param.SF, param.coding, param.crc, param.pwr_db, param.pwr_pa,  param.band_i, param.freq_i, param.beacon , param.milis);
                 print_green();
                     
@@ -97,8 +97,8 @@ void UDP_send_f(unsigned char *hello, int leng) {
 }
 
 void print_green() {
-//    printf("5V-V: %1.2f   5V-I: %3.0f   5V_P: %4.0f    12V-V: %2.2f    12V-I: %4.0f    12V-P: %4.0f    millis: %d\n", param_green.V5_v, param_green.V5_i, param_green.V5_p, param_green.V12_v, param_green.V12_i, param_green.V12_p, param.milis);
-    printf("\r5V-V %1.2f   5V-I %04.0f   5V_P %04.0f    12V-V %02.2f    12V-I %04.0f    12V-P %04.0f     Millis %d", param_green.V5_v, param_green.V5_i, param_green.V5_p, param_green.V12_v, param_green.V12_i, param_green.V12_p, param.milis);
-//     fflush(stdout);
+    float a = param_green.milis/1000;
+    printf("\r5V-V %1.2f   5V-I %04.0f   5V_P %04.0f    12V-V %02.2f    12V-I %04.0f    12V-P %04.0f     Millis %06.0f", param_green.V5_v, param_green.V5_i, param_green.V5_p, param_green.V12_v, param_green.V12_i, param_green.V12_p, a);
+    fflush(stdout);
 }
 
