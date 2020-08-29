@@ -18,6 +18,11 @@
 #include <stdbool.h>
 #include <netdb.h>
 
+#define MAX 80
+#define PORT 8082
+#define SA struct sockaddr
+char buff[8];
+
 void *tcp_rx (int sockfd) {
     
     for(;;) {
@@ -49,8 +54,65 @@ void *tcp_rx (int sockfd) {
     }
 }
 
+unsigned long  timmee() {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    unsigned  long millisecondsSinceEpoch =
+    (unsigned  long)(tv.tv_sec);
+    return millisecondsSinceEpoch;
+}
 
-int *tcp_conn()
+void tcp_cli_send(int sockfd) {
+    while(1) {
+        printf("656435   %d %d \n", timmee(), sizeof(timmee()));
+        unsigned long ti = timmee();
+        memcpy(buff,(unsigned char *)&ti,4);
+    write(sockfd, buff, 4);
+        usleep(1000000);
+    }
+}
+
+int *tcp_cli() {
+
+    
+
+      
+        int sockfd, connfd;
+        struct sockaddr_in servaddr, cli;
+      
+        // socket create and varification
+        sockfd = socket(AF_INET, SOCK_STREAM, 0);
+        if (sockfd == -1) {
+            printf("socket creation failed...\n");
+            exit(0);
+        }
+        else
+            printf("Socket successfully created..\n");
+        bzero(&servaddr, sizeof(servaddr));
+      
+        // assign IP, PORT
+        servaddr.sin_family = AF_INET;
+        servaddr.sin_addr.s_addr = inet_addr("192.168.3.27");
+        servaddr.sin_port = htons(PORT);
+      
+        // connect the client socket to server socket
+        if (connect(sockfd, (SA*)&servaddr, sizeof(servaddr)) != 0) {
+            printf("connection with the server failed...\n");
+            exit(0);
+        }
+        else
+            printf("connected to the server..\n");
+      
+        
+        pthread_create(&timm, NULL, tcp_cli_send, sockfd);
+    pthread_join(timm, NULL);
+      
+        // close the socket
+        close(sockfd);
+    
+}
+
+int *tcp_serv_conn()
 {
     
     //initialise all client_socket[] to 0 so not checked

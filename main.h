@@ -32,7 +32,8 @@ const bool  udp_activate   =  false;
 const bool  ram_allocation  = false;
 const bool  mysql_activate =  false;
 const bool  file_activate  =  false;
-const bool  tcp_activate  =  true;
+const bool  tcp_serv_activate  =  false;
+const bool  tcp_client_activate  =  true;
 
 #define MAXEVENTS 64
 #define pkt_size  44
@@ -57,7 +58,7 @@ unsigned char udp_buffer[MAXLINE];
 char command[10][32];
 bool serial_raw = false;
 bool udp_raw = false;
-pthread_t serial_thread, udp_thread, udp_sample_thread, mysql_thread,log_thread, tcp_thread, file_thread, timer_thread, tcp_thread;
+pthread_t serial_thread, udp_thread, udp_sample_thread, mysql_thread,log_thread, tcp_thread, file_thread, timer_thread, tcp_serv_thread, tcp_cli_thread, timm;
 struct timeb timer_msec;
 long long int timestamp_msec, t_o, t_n, t_d;
 struct sockaddr_in servaddr, cliaddr, rx_addr;
