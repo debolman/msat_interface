@@ -23,7 +23,7 @@
 #define SA struct sockaddr
 char buff[8];
 
-void *tcp_rx (int sockfd) {
+void *tcp_rx () {
     
     for(;;) {
         usleep(1000000);
@@ -62,25 +62,36 @@ unsigned long  timmee() {
     return millisecondsSinceEpoch;
 }
 
-void tcp_cli_send(int sockfd) {
+void* tcp_cli_send() {
     while(1) {
-        printf("656435   %d %d \n", timmee(), sizeof(timmee()));
+        printf("%lu \n", timmee() );
         unsigned long ti = timmee();
         memcpy(buff,(unsigned char *)&ti,4);
-    write(sockfd, buff, 4);
+    int g = write(sockfd, buff, 4);
+    printf("write: %d\n",g);
         usleep(1000000);
     }
 }
 
-int *tcp_cli() {
+void *tcp_cli_recv() {
+    while(1) {
+        bzero(buffer,256);
+        int n = read(sockfd,buffer,255);
+        printf("%d %s\n",n, buffer);
+    }
+}
 
-    
+void *tcp_cli() {
 
-      
         int sockfd, connfd;
         struct sockaddr_in servaddr, cli;
-      
-        // socket create and varification
+    
+    int optval;
+    socklen_t optlen = sizeof(optval);
+
+    
+    while(1) {
+          printf("while.. \n");
         sockfd = socket(AF_INET, SOCK_STREAM, 0);
         if (sockfd == -1) {
             printf("socket creation failed...\n");
@@ -90,11 +101,29 @@ int *tcp_cli() {
             printf("Socket successfully created..\n");
         bzero(&servaddr, sizeof(servaddr));
       
+
+        /* Set the option active */
+         optval = 1;
+         optlen = sizeof(optval);
+         if(setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen) < 0) {
+            perror("setsockopt()");
+            close(sockfd);
+            exit(EXIT_FAILURE);
+         }
+         printf("SO_KEEPALIVE set on socket\n");
+
+        
+//        setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, 1,
+//        setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPALIVE, keepalive_time, sizeof keepalive_time);
+//        setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPCNT, keepalive_count, sizeof keepalive_count);
+//        setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPINTVL, keepalive_interval, sizeof keepalive_interval);
+
+                   printf("Option assigned\n");
         // assign IP, PORT
         servaddr.sin_family = AF_INET;
         servaddr.sin_addr.s_addr = inet_addr("192.168.3.27");
         servaddr.sin_port = htons(PORT);
-      
+
         // connect the client socket to server socket
         if (connect(sockfd, (SA*)&servaddr, sizeof(servaddr)) != 0) {
             printf("connection with the server failed...\n");
@@ -102,17 +131,23 @@ int *tcp_cli() {
         }
         else
             printf("connected to the server..\n");
-      
+     
+            pthread_create(&timm, NULL, &tcp_cli_send, NULL);
+        pthread_create(&tcp_rec, NULL, tcp_cli_recv, NULL);
+            pthread_join(timm, NULL);
+        pthread_join(tcp_rec, NULL);
         
-        pthread_create(&timm, NULL, tcp_cli_send, sockfd);
-    pthread_join(timm, NULL);
-      
-        // close the socket
-        close(sockfd);
+        printf("join exit\n");
+          
+            // close the socket
+            //close(sockfd);
+
+        printf("end while.. \n");
+    }
     
 }
 
-int *tcp_serv_conn()
+void *tcp_serv_conn()
 {
     
     //initialise all client_socket[] to 0 so not checked

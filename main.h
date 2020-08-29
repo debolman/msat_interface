@@ -58,7 +58,7 @@ unsigned char udp_buffer[MAXLINE];
 char command[10][32];
 bool serial_raw = false;
 bool udp_raw = false;
-pthread_t serial_thread, udp_thread, udp_sample_thread, mysql_thread,log_thread, tcp_thread, file_thread, timer_thread, tcp_serv_thread, tcp_cli_thread, timm;
+pthread_t serial_thread, udp_thread, udp_sample_thread, mysql_thread,log_thread, tcp_thread, file_thread, timer_thread, tcp_serv_thread, tcp_cli_thread, timm, tcp_rec;
 struct timeb timer_msec;
 long long int timestamp_msec, t_o, t_n, t_d;
 struct sockaddr_in servaddr, cliaddr, rx_addr;
