@@ -44,9 +44,12 @@ void *tcp_serv_beacon() {
             if (FD_ISSET( sd , &readfds))
             {
                 unsigned long long  a = unix_secs();
-                    send(sd , &a , 8 , 0 );
+		char bufer[1024];
+		memcpy(bufer,(char *)&a,4);
+                    send(sd , bufer , 4 , 0 );
             }
         }
+	sleep(1);
     }
 }
 
@@ -73,6 +76,8 @@ void *tcp_cli_recv() {
             }
             printf("\n");
         }
+	unsigned long long *a;
+	memcpy(&a,bufer,4);
     }
 }
 
