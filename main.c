@@ -106,6 +106,6 @@ int main(void) {
     if(serial_activate) pthread_join(serial_thread, NULL);
     if (udp_activate) pthread_join(udp_thread, NULL);
     if(serial_activate) close(fd);
-    if (udp_activate) close(sockfd);
+    if (udp_activate) close(UDP_socket);
 }
 

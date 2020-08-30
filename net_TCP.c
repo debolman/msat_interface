@@ -43,35 +43,42 @@ void *tcp_serv_beacon() {
             sd = client_socket[i];
             if (FD_ISSET( sd , &readfds))
             {
-                    send(sd , "abc" , 3 , 0 );
+                unsigned long long  a = unix_secs();
+                    send(sd , &a , 8 , 0 );
             }
         }
     }
 }
 
 void* tcp_cli_send() {
-    while(1) {
+    for(;;) {
         printf("%llu \n", unix_secs() );
         unsigned long ti = unix_secs();
         memcpy(buff,(unsigned char *)&ti,4);
-    int g = write(sockfd, buff, 4);
+    int g = write(TCP_client_socket, buff, 4);
     //printf("write: %d\n",g);
         sleep(1000);
     }
 }
 
 void *tcp_cli_recv() {
-    while(1) {
-        bzero(buffer,256);
-        int n = read(sockfd,buffer,255);
-        printf("%d %s\n",n, buffer);
+    for(;;) {
+        unsigned char bufer[1024];
+        bzero(bufer,1024);
+        int num = read(TCP_client_socket,bufer,255);
+        //printf("%d ",num);
+        if(TCP_raw) {
+            for (int n=0;n<num;n++) {
+                printf("%02X ",bufer[n]);
+            }
+            printf("\n");
+        }
     }
 }
 
 void *tcp_cli() {
 
-    printf("fff.. \n");
-        int sockfd, connfd;
+        int connfd;
         struct sockaddr_in servaddr, cli;
     
     int optval;
@@ -79,41 +86,44 @@ void *tcp_cli() {
 
     
     for(;;) {
-          printf("while.. \n");
-        sockfd = socket(AF_INET, SOCK_STREAM, 0);
-        if (sockfd == -1) {
+        TCP_client_socket = socket(AF_INET, SOCK_STREAM, 0);
+        if (TCP_client_socket == -1) {
+            red();
             printf("socket creation failed...\n");
+            normal();
             exit(0);
         }
         else
-            printf("Socket successfully created..\n");
+        {
+            green();
+            printf("TCP Socket successfully created\n");
+            normal();
+        }
         bzero(&servaddr, sizeof(servaddr));
       
         servaddr.sin_family = AF_INET;
-        servaddr.sin_addr.s_addr = inet_addr("10.8.0.1");
+        servaddr.sin_addr.s_addr = inet_addr(TCP_dest_addr);
         servaddr.sin_port = htons(TCP_dest_port);
 
         // connect the client socket to server socket
-        if (connect(sockfd, (SA*)&servaddr, sizeof(servaddr)) != 0) {
+        if (connect(TCP_client_socket, (SA*)&servaddr, sizeof(servaddr)) != 0) {
+            red();
             printf("connection with the server failed...\n");
+            normal();
             exit(0);
         }
-        else
-            printf("connected to the server..\n");
+        else {
+            green();
+            printf("Connected to %s:%d\n", TCP_dest_addr, TCP_dest_port);
+            normal();
+        }
      
             //pthread_create(&timm, NULL, &tcp_cli_send, NULL);
         pthread_create(&tcp_rec, NULL, tcp_cli_recv, NULL);
             //pthread_join(timm, NULL);
         pthread_join(tcp_rec, NULL);
-        
-        printf("join exit\n");
-          
-            // close the socket
             //close(sockfd);
-
-        printf("end while.. \n");
     }
-    
 }
 
 void *tcp_serv_conn()
@@ -124,11 +134,12 @@ void *tcp_serv_conn()
     {
         client_socket[i] = 0;
     }
-      
-    //create a master socket
+    
     if( (master_socket = socket(AF_INET , SOCK_STREAM , 0)) == 0)
     {
+        red();
         perror("socket failed");
+        normal();
         exit(EXIT_FAILURE);
     }
   
@@ -147,10 +158,14 @@ void *tcp_serv_conn()
     //bind the socket to localhost port 8888
     if (bind(master_socket, (struct sockaddr *)&address, sizeof(address))<0)
     {
+        red();
         perror("bind failed");
+        normal();
         exit(EXIT_FAILURE);
     }
+    green();
     printf("Listener on port %d \n", TCP_serv_port);
+    normal();
      
     //try to specify maximum of 3 pending connections for the master socket
     if (listen(master_socket, 2) < 0)
@@ -161,8 +176,9 @@ void *tcp_serv_conn()
       
     //accept the incoming connection
     addrlen = sizeof(address);
+    green();
     puts("Waiting for connections ...");
-    
+    normal();
     
     pthread_create(&timer, NULL, tcp_rx, NULL);
     if(tcp_serv_beacon_activate) pthread_create(&tcp_serv_beacon_thread, NULL, tcp_serv_beacon, NULL);
@@ -171,7 +187,6 @@ void *tcp_serv_conn()
      
     for(;;)
     {
-        printf("inizio del ciclo ...\n");
         //clear the socket set
         FD_ZERO(&readfds);
   

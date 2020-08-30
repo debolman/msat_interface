@@ -25,7 +25,7 @@ void *UDP_listener(void *vargp)
     normal();
     while(true) {
         socklen_t len;
-        int UDP_recved_len = recvfrom(sockfd, udp_buffer, sizeof(udp_buffer), 0, (struct sockaddr*)&cliaddr,&len);
+        int UDP_recved_len = recvfrom(UDP_socket, udp_buffer, sizeof(udp_buffer), 0, (struct sockaddr*)&cliaddr,&len);
         if(UDP_recved_len>0) {
             //UDP_send_f(udp_buffer,UDP_recved_len);
             
@@ -56,7 +56,7 @@ void *UDP_listener(void *vargp)
 
 
 void socket_initialize() {
-    if ( (sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) {
+    if ( (UDP_socket = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) {
         red();
         printf("Socket creation failed");
         normal();
@@ -71,7 +71,7 @@ void socket_initialize() {
     servaddr.sin_family = AF_INET; // IPv4
     servaddr.sin_addr.s_addr = INADDR_ANY;
     servaddr.sin_port = htons(UDP_serv_port);
-    if ( bind(sockfd, (const struct sockaddr *)&servaddr, sizeof(servaddr)) < 0 )
+    if ( bind(UDP_socket, (const struct sockaddr *)&servaddr, sizeof(servaddr)) < 0 )
     {
         red();
         printf("bind failed\n");
@@ -85,7 +85,7 @@ void UDP_send(unsigned char *hello, int leng) {
     cliaddr.sin_family = AF_INET;
     cliaddr.sin_port = htons(7072);
     cliaddr.sin_addr.s_addr = inet_addr("192.168.3.56");
-    sendto(sockfd, (const char *)hello, leng, 0, (const struct sockaddr *) &cliaddr, sizeof(cliaddr));
+    sendto(UDP_socket, (const char *)hello, leng, 0, (const struct sockaddr *) &cliaddr, sizeof(cliaddr));
 }
 
 void UDP_send_f(unsigned char *hello, int leng) {
@@ -93,7 +93,7 @@ void UDP_send_f(unsigned char *hello, int leng) {
     cliaddr.sin_family = AF_INET;
     cliaddr.sin_port = htons(7072);
     cliaddr.sin_addr.s_addr = inet_addr("192.168.2.56");
-    sendto(sockfd, (const char *)hello, leng, 0, (const struct sockaddr *) &cliaddr, sizeof(cliaddr));
+    sendto(UDP_socket, (const char *)hello, leng, 0, (const struct sockaddr *) &cliaddr, sizeof(cliaddr));
 }
 
 void print_green() {
