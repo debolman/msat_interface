@@ -35,6 +35,7 @@ void *tcp_rx () {
     }
 }
 
+
 void *tcp_serv_beacon() {
     while(true) {
         for (i = 0; i < max_clients; i++)
@@ -69,6 +70,7 @@ void *tcp_cli_recv() {
 
 void *tcp_cli() {
 
+    printf("fff.. \n");
         int sockfd, connfd;
         struct sockaddr_in servaddr, cli;
     
@@ -76,7 +78,7 @@ void *tcp_cli() {
     socklen_t optlen = sizeof(optval);
 
     
-    while(1) {
+    for(;;) {
           printf("while.. \n");
         sockfd = socket(AF_INET, SOCK_STREAM, 0);
         if (sockfd == -1) {
@@ -87,17 +89,6 @@ void *tcp_cli() {
             printf("Socket successfully created..\n");
         bzero(&servaddr, sizeof(servaddr));
       
-
-        /* Set the option active */
-//         optval = 1;
-//         optlen = sizeof(optval);
-//         if(setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen) < 0) {
-//            perror("setsockopt()");
-//            close(sockfd);
-//            exit(EXIT_FAILURE);
-//         }
-//         printf("SO_KEEPALIVE set on socket\n");
-
         servaddr.sin_family = AF_INET;
         servaddr.sin_addr.s_addr = inet_addr("10.8.0.1");
         servaddr.sin_port = htons(TCP_dest_port);
@@ -175,8 +166,8 @@ void *tcp_serv_conn()
     
     pthread_create(&timer, NULL, tcp_rx, NULL);
     if(tcp_serv_beacon_activate) pthread_create(&tcp_serv_beacon_thread, NULL, tcp_serv_beacon, NULL);
-   pthread_join(timer, NULL);
-    if(tcp_serv_beacon_activate) pthread_join(tcp_serv_beacon_thread, NULL);
+   //pthread_join(timer, NULL);
+    //if(tcp_serv_beacon_activate) pthread_join(tcp_serv_beacon_thread, NULL);
      
     for(;;)
     {
