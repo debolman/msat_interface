@@ -33,9 +33,9 @@ const bool  udp_activate   =        false;
 const bool  ram_allocation  =       false;
 const bool  mysql_activate =        false;
 const bool  file_activate  =        false;
-const bool  tcp_serv_activate  =    true;
-const bool  tcp_client_activate  =  false;
-const bool  tcp_serv_beacon_activate  =  true;
+const bool  tcp_serv_activate  =    false;
+const bool  tcp_client_activate  =  true;
+const bool  tcp_serv_beacon_activate  =  false;
 
 #define MAXEVENTS 64
 #define pkt_size  44

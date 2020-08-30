@@ -30,7 +30,7 @@ void *tcp_rx () {
                 printf(" %d" , i);
             }
         }
-        printf("\n");
+        printf(" x\n");
 
     }
 }
