@@ -18,58 +18,44 @@
 #include <stdbool.h>
 #include <netdb.h>
 
-#define MAX 80
-#define PORT 8082
-#define SA struct sockaddr
-char buff[8];
-
 void *tcp_rx () {
     
     for(;;) {
-        usleep(1000000);
-
-  printf("list ");
+        sleep(1000);
+        printf("list ");
         for (i = 0; i < max_clients; i++)
         {
-            //if position is empty
             if( client_socket[i] != 0 )
             {
                 printf(" %d" , i);
-                 
             }
         }
         printf("\n");
-        
-        for (i = 0; i < max_clients; i++)
-        {
-            sd = client_socket[i];
-              
-            if (FD_ISSET( sd , &readfds))
-            {
-                    send(sd , "ert" , 3 , 0 );
-                
-            }
-        }
-        
+
     }
 }
 
-unsigned long  timmee() {
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    unsigned  long millisecondsSinceEpoch =
-    (unsigned  long)(tv.tv_sec);
-    return millisecondsSinceEpoch;
+void *tcp_serv_beacon() {
+    while(true) {
+        for (i = 0; i < max_clients; i++)
+        {
+            sd = client_socket[i];
+            if (FD_ISSET( sd , &readfds))
+            {
+                    send(sd , "abc" , 3 , 0 );
+            }
+        }
+    }
 }
 
 void* tcp_cli_send() {
     while(1) {
-        printf("%lu \n", timmee() );
-        unsigned long ti = timmee();
+        printf("%llu \n", unix_secs() );
+        unsigned long ti = unix_secs();
         memcpy(buff,(unsigned char *)&ti,4);
     int g = write(sockfd, buff, 4);
-    printf("write: %d\n",g);
-        usleep(1000000);
+    //printf("write: %d\n",g);
+        sleep(1000);
     }
 }
 
@@ -103,26 +89,18 @@ void *tcp_cli() {
       
 
         /* Set the option active */
-         optval = 1;
-         optlen = sizeof(optval);
-         if(setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen) < 0) {
-            perror("setsockopt()");
-            close(sockfd);
-            exit(EXIT_FAILURE);
-         }
-         printf("SO_KEEPALIVE set on socket\n");
+//         optval = 1;
+//         optlen = sizeof(optval);
+//         if(setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen) < 0) {
+//            perror("setsockopt()");
+//            close(sockfd);
+//            exit(EXIT_FAILURE);
+//         }
+//         printf("SO_KEEPALIVE set on socket\n");
 
-        
-//        setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, 1,
-//        setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPALIVE, keepalive_time, sizeof keepalive_time);
-//        setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPCNT, keepalive_count, sizeof keepalive_count);
-//        setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPINTVL, keepalive_interval, sizeof keepalive_interval);
-
-                   printf("Option assigned\n");
-        // assign IP, PORT
         servaddr.sin_family = AF_INET;
-        servaddr.sin_addr.s_addr = inet_addr("192.168.3.27");
-        servaddr.sin_port = htons(PORT);
+        servaddr.sin_addr.s_addr = inet_addr("10.8.0.1");
+        servaddr.sin_port = htons(TCP_dest_port);
 
         // connect the client socket to server socket
         if (connect(sockfd, (SA*)&servaddr, sizeof(servaddr)) != 0) {
@@ -132,9 +110,9 @@ void *tcp_cli() {
         else
             printf("connected to the server..\n");
      
-            pthread_create(&timm, NULL, &tcp_cli_send, NULL);
+            //pthread_create(&timm, NULL, &tcp_cli_send, NULL);
         pthread_create(&tcp_rec, NULL, tcp_cli_recv, NULL);
-            pthread_join(timm, NULL);
+            //pthread_join(timm, NULL);
         pthread_join(tcp_rec, NULL);
         
         printf("join exit\n");
@@ -149,7 +127,7 @@ void *tcp_cli() {
 
 void *tcp_serv_conn()
 {
-    
+    int opt = 1;
     //initialise all client_socket[] to 0 so not checked
     for (i = 0; i < max_clients; i++)
     {
@@ -173,7 +151,7 @@ void *tcp_serv_conn()
     //type of socket created
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons( PORT );
+    address.sin_port = htons( TCP_serv_port );
       
     //bind the socket to localhost port 8888
     if (bind(master_socket, (struct sockaddr *)&address, sizeof(address))<0)
@@ -181,7 +159,7 @@ void *tcp_serv_conn()
         perror("bind failed");
         exit(EXIT_FAILURE);
     }
-    printf("Listener on port %d \n", PORT);
+    printf("Listener on port %d \n", TCP_serv_port);
      
     //try to specify maximum of 3 pending connections for the master socket
     if (listen(master_socket, 2) < 0)
@@ -196,8 +174,11 @@ void *tcp_serv_conn()
     
     
     pthread_create(&timer, NULL, tcp_rx, NULL);
+    if(tcp_serv_beacon_activate) pthread_create(&tcp_serv_beacon_thread, NULL, tcp_serv_beacon, NULL);
+   pthread_join(timer, NULL);
+    if(tcp_serv_beacon_activate) pthread_join(tcp_serv_beacon_thread, NULL);
      
-    while(TRUE)
+    for(;;)
     {
         printf("inizio del ciclo ...\n");
         //clear the socket set
@@ -241,15 +222,7 @@ void *tcp_serv_conn()
           
             //inform user of socket number - used in send and receive commands
             printf("New connection , socket fd is %d , ip is : %s , port : %d \n" , new_socket , inet_ntoa(address.sin_addr) , ntohs(address.sin_port));
-        
-            //send new connection greeting message
-            if( send(new_socket, message, strlen(message), 0) != strlen(message) )
-            {
-                perror("send");
-            }
-              
-            puts("Welcome message sent successfully");
-              
+
             //add new socket to array of sockets
             for (i = 0; i < max_clients; i++)
             {

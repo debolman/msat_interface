@@ -27,17 +27,24 @@
 #include <netdb.h>
 #include "main.h"
 #include "serial.c"
-#include "tcp.c"
+#include "net_TCP.c"
 #include "net_UDP.c"
 #include <mysql.h>
 #include "mysql.c"
 
-unsigned long long  timee() {
+unsigned long long  unix_mils() {
     struct timeval tv;
     gettimeofday(&tv, NULL);
     unsigned long long millisecondsSinceEpoch =
         (unsigned long long)(tv.tv_sec) * 1000 +
         (unsigned long long)(tv.tv_usec) / 1000;
+    return millisecondsSinceEpoch;
+}
+
+unsigned long long  unix_secs() {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    unsigned long long millisecondsSinceEpoch = (unsigned long long)(tv.tv_sec);
     return millisecondsSinceEpoch;
 }
 
@@ -78,6 +85,7 @@ void *file_management() {
     return 0;
 }
 
+
 int main(void) {
     green();
     printf("Hello!\n");
@@ -93,7 +101,7 @@ int main(void) {
     //if (mysql_activate) pthread_create(&mysql_thread, NULL, mysql_log, NULL);
     if (mysql_activate) mysql_connection();
     pthread_join(mysql_thread, NULL);
-    if(tcp_serv_activate) pthread_join(tcp_thread, NULL);
+    if(tcp_serv_activate) pthread_join(tcp_serv_thread, NULL);
     if(tcp_client_activate) pthread_join(tcp_cli_thread, NULL);
     if(serial_activate) pthread_join(serial_thread, NULL);
     if (udp_activate) pthread_join(udp_thread, NULL);

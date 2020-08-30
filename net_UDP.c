@@ -21,7 +21,7 @@
 void *UDP_listener(void *vargp)
 {
     green();
-    printf(" and listening on port %d\n", udp_serv_port);
+    printf(" and listening on port %d\n", UDP_serv_port);
     normal();
     while(true) {
         socklen_t len;
@@ -70,7 +70,7 @@ void socket_initialize() {
     bzero(&servaddr, sizeof(servaddr));
     servaddr.sin_family = AF_INET; // IPv4
     servaddr.sin_addr.s_addr = INADDR_ANY;
-    servaddr.sin_port = htons(udp_serv_port);
+    servaddr.sin_port = htons(UDP_serv_port);
     if ( bind(sockfd, (const struct sockaddr *)&servaddr, sizeof(servaddr)) < 0 )
     {
         red();

@@ -26,21 +26,25 @@
 #include <stdbool.h>
 #include <netdb.h>
 #include <mysql.h>
+#include <stdbool.h>
 
-const bool  serial_activate = false;
-const bool  udp_activate   =  false;
-const bool  ram_allocation  = false;
-const bool  mysql_activate =  false;
-const bool  file_activate  =  false;
-const bool  tcp_serv_activate  =  false;
-const bool  tcp_client_activate  =  true;
+const bool  serial_activate =       false;
+const bool  udp_activate   =        false;
+const bool  ram_allocation  =       false;
+const bool  mysql_activate =        false;
+const bool  file_activate  =        false;
+const bool  tcp_serv_activate  =    true;
+const bool  tcp_client_activate  =  false;
+const bool  tcp_serv_beacon_activate  =  true;
 
 #define MAXEVENTS 64
 #define pkt_size  44
 #define diff_size 1
 #define MAXLINE 1024
-#define udp_serv_port    7072
-#define tcp_serv_port    6080
+#define UDP_serv_port    7072
+#define TCP_serv_port    6080
+#define TCP_dest_port 8082
+#define SA struct sockaddr
 #define KNRM  "\x1B[0m"
 #define KRED  "\x1B[31m"
 #define KGRN  "\x1B[32m"
@@ -52,39 +56,28 @@ const bool  tcp_client_activate  =  true;
 
 
 MYSQL *con;
-int fd, fo, bytes_read, sockfd, socket_fd, len;
+bool serial_raw = false;
+bool udp_raw = false;
+
+char buff[8];
+int fd, fo, bytes_read, sockfd, socket_fd, len, master_socket, activity, i , valread , sd, addrlen, new_socket, max_sd;
 struct  tm *ts;
 unsigned char udp_buffer[MAXLINE];
 char command[10][32];
-bool serial_raw = false;
-bool udp_raw = false;
-pthread_t serial_thread, udp_thread, udp_sample_thread, mysql_thread,log_thread, tcp_thread, file_thread, timer_thread, tcp_serv_thread, tcp_cli_thread, timm, tcp_rec;
+pthread_t serial_thread, udp_thread, udp_sample_thread, mysql_thread, log_thread, file_thread, timer_thread, tcp_serv_thread, tcp_cli_thread, timm, tcp_rec, timer, tcp_serv_beacon_thread;
 struct timeb timer_msec;
 long long int timestamp_msec, t_o, t_n, t_d;
-struct sockaddr_in servaddr, cliaddr, rx_addr;
+struct sockaddr_in servaddr, cliaddr, rx_addr, address;
 char hostbuffer[] = "debolman.ns0.it";
 unsigned long long toc, tic;
 int counter = 0;
 int sent_counter = 0;
 int recv_counter = 0;
-#define TRUE   1
-#define FALSE  0
-#define PORT 8082
-int opt = TRUE;
-  int master_socket , addrlen , new_socket , client_socket[30] , max_clients = 4 , activity, i , valread , sd;
-  int max_sd;
-  struct sockaddr_in address;
-    
-  char buffer[1025];  //data buffer of 1K
-    
-  //set of socket descriptors
+int client_socket[30];
+int max_clients = 4;;
+char buffer[1025];
+
   fd_set readfds;
-    
-  //a message
-  char *message = "ECHO Daemon v1";
-
- pthread_t timer;
-
 
 typedef struct {
     int id;
@@ -113,7 +106,6 @@ struct tlm_sct {
 
 void decode_tlm();
 void *log_thd();
-unsigned long long  timee();
 void UDP_send(unsigned char *hello, int leng);
 void red();
 void green();
@@ -124,6 +116,7 @@ void print_green();
 void cyan();
 void white() ;
 void normal() ;
+unsigned long long unix_secs() ;
 void UDP_send_f(unsigned char *hello, int leng) ;
 void write_wo_connection( int a, int b, int c, int d, int e, int f, int g, int h, int i, int j);
 

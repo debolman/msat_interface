@@ -85,9 +85,9 @@ void *mysql_log() {
     mysql_connection();
     unsigned long long before = 0;
     while(1) {
-        if (timee() - before > 199 ) {
+        if (unix_secs() - before > 199 ) {
         pthread_create(&log_thread, NULL, log_thd, NULL);
-            before = timee();
+            before = unix_secs();
               }
         //usleep(10000);
     }
