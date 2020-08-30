@@ -33,18 +33,15 @@ const bool  udp_activate   =        false;
 const bool  ram_allocation  =       false;
 const bool  mysql_activate =        false;
 const bool  file_activate  =        false;
-const bool  tcp_serv_activate  =    true;
-const bool  tcp_client_activate  =  false;
-const bool  tcp_serv_beacon_activate  =  true;
+const bool  tcp_serv_activate  =    false;
+const bool  tcp_client_activate  =  true;
+const bool  tcp_serv_beacon_activate  =  false;
 
 #define MAXEVENTS 64
 #define pkt_size  44
-#define diff_size 1
-#define MAXLINE 1024
-#define UDP_serv_port    7072
-#define TCP_serv_port    8082
+#define UDP_serv_port 7072
+#define TCP_serv_port 8082
 #define TCP_dest_port 8082
-#define SA struct sockaddr
 #define KNRM  "\x1B[0m"
 #define KRED  "\x1B[31m"
 #define KGRN  "\x1B[32m"
@@ -60,26 +57,20 @@ bool serial_raw = false;
 bool udp_raw = false;
 bool TCP_raw = true;
 
-char buff[8];
-int fd, fo, bytes_read, TCP_client_socket, UDP_socket, socket_fd, len, master_socket, activity, i , valread , sd, addrlen, new_socket, max_sd;
+int fd, bytes_read, TCP_client_socket, UDP_socket, len, master_socket, activity, sd, addrlen, new_socket, max_sd;
 struct  tm *ts;
-unsigned char udp_buffer[MAXLINE];
+unsigned char udp_buffer[1024];
 char command[10][32];
-pthread_t serial_thread, udp_thread, udp_sample_thread, mysql_thread, log_thread, file_thread, timer_thread, tcp_serv_thread, tcp_cli_thread, timm, tcp_rec, timer, tcp_serv_beacon_thread;
-struct timeb timer_msec;
-long long int timestamp_msec, t_o, t_n, t_d;
-struct sockaddr_in servaddr, cliaddr, rx_addr, address;
+pthread_t serial_thread, udp_thread, udp_sample_thread, mysql_thread, log_thread, file_thread, timer_thread, tcp_serv_thread, tcp_cli_thread, tcp_rec, timer, tcp_serv_beacon_thread;
+struct sockaddr_in servaddr, cliaddr, address;
 char hostbuffer[] = "debolman.ns0.it";
 char TCP_dest_addr[] = "10.8.0.1";
 unsigned long long toc, tic;
 int counter = 0;
-int sent_counter = 0;
-int recv_counter = 0;
 int client_socket[30];
 int max_clients = 4;;
-char buffer[1025];
-
-  fd_set readfds;
+unsigned char bufer[1025];
+fd_set readfds;
 
 typedef struct {
     int id;

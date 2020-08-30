@@ -18,35 +18,28 @@
 #include <stdbool.h>
 #include <netdb.h>
 
-void *tcp_rx () {
-    
+void *tcp_cient_count () {
     for(;;) {
-        sleep(1000);
-        printf("list ");
-        for (i = 0; i < max_clients; i++)
+        sleep(10000);
+        printf("Connected clients: ");
+        for (int i = 0; i < max_clients; i++)
         {
-            if( client_socket[i] != 0 )
-            {
-                printf(" %d" , i);
-            }
+            if( client_socket[i] != 0 ) printf(" %d" , i);
         }
-        printf(" x\n");
-
+        printf("\n");
     }
 }
 
-
 void *tcp_serv_beacon() {
-    while(true) {
-        for (i = 0; i < max_clients; i++)
+    for(;;) {
+        for (int i = 0; i < max_clients; i++)
         {
             sd = client_socket[i];
             if (FD_ISSET( sd , &readfds))
             {
                 unsigned long long  a = unix_secs();
-		char bufer[1024];
-		memcpy(bufer,(char *)&a,4);
-                    send(sd , bufer , 4 , 0 );
+                memcpy(bufer,(char *)&a,4);
+                send(sd , bufer , 4 , 0 );
             }
         }
 	sleep(1);
@@ -57,8 +50,8 @@ void* tcp_cli_send() {
     for(;;) {
         printf("%llu \n", unix_secs() );
         unsigned long ti = unix_secs();
-        memcpy(buff,(unsigned char *)&ti,4);
-    int g = write(TCP_client_socket, buff, 4);
+        memcpy(bufer,(unsigned char *)&ti,4);
+    int g = write(TCP_client_socket, bufer, 4);
     //printf("write: %d\n",g);
         sleep(1000);
     }
@@ -66,7 +59,6 @@ void* tcp_cli_send() {
 
 void *tcp_cli_recv() {
     for(;;) {
-        unsigned char bufer[1024];
         bzero(bufer,1024);
         int num = read(TCP_client_socket,bufer,255);
         //printf("%d ",num);
@@ -76,8 +68,9 @@ void *tcp_cli_recv() {
             }
             printf("\n");
         }
-	unsigned long long *a;
-	memcpy(&a,bufer,4);
+        unsigned long long a;
+        memcpy(&a,bufer,4);
+        printf("%llu \n",a);
     }
 }
 
@@ -85,10 +78,8 @@ void *tcp_cli() {
 
         int connfd;
         struct sockaddr_in servaddr, cli;
-    
     int optval;
     socklen_t optlen = sizeof(optval);
-
     
     for(;;) {
         TCP_client_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -111,7 +102,7 @@ void *tcp_cli() {
         servaddr.sin_port = htons(TCP_dest_port);
 
         // connect the client socket to server socket
-        if (connect(TCP_client_socket, (SA*)&servaddr, sizeof(servaddr)) != 0) {
+        if (connect(TCP_client_socket, (struct sockaddr*)&servaddr, sizeof(servaddr)) != 0) {
             red();
             printf("connection with the server failed...\n");
             normal();
@@ -135,7 +126,7 @@ void *tcp_serv_conn()
 {
     int opt = 1;
     //initialise all client_socket[] to 0 so not checked
-    for (i = 0; i < max_clients; i++)
+    for (int i = 0; i < max_clients; i++)
     {
         client_socket[i] = 0;
     }
@@ -185,7 +176,7 @@ void *tcp_serv_conn()
     puts("Waiting for connections ...");
     normal();
     
-    pthread_create(&timer, NULL, tcp_rx, NULL);
+    pthread_create(&timer, NULL, tcp_cient_count, NULL);
     if(tcp_serv_beacon_activate) pthread_create(&tcp_serv_beacon_thread, NULL, tcp_serv_beacon, NULL);
    //pthread_join(timer, NULL);
     //if(tcp_serv_beacon_activate) pthread_join(tcp_serv_beacon_thread, NULL);
@@ -200,7 +191,7 @@ void *tcp_serv_conn()
         max_sd = master_socket;
          
         //add child sockets to set
-        for ( i = 0 ; i < max_clients ; i++)
+        for (int  i = 0 ; i < max_clients ; i++)
         {
             //socket descriptor
             sd = client_socket[i];
@@ -235,7 +226,7 @@ void *tcp_serv_conn()
             printf("New connection , socket fd is %d , ip is : %s , port : %d \n" , new_socket , inet_ntoa(address.sin_addr) , ntohs(address.sin_port));
 
             //add new socket to array of sockets
-            for (i = 0; i < max_clients; i++)
+            for (int i = 0; i < max_clients; i++)
             {
                 //if position is empty
                 if( client_socket[i] == 0 )
@@ -249,14 +240,14 @@ void *tcp_serv_conn()
         }
           
         //else its some IO operation on some other socket :)
-        for (i = 0; i < max_clients; i++)
+        for (int i = 0; i < max_clients; i++)
         {
             sd = client_socket[i];
               
             if (FD_ISSET( sd , &readfds))
             {
                 //Check if it was for closing , and also read the incoming message
-                if ((valread = read( sd , buffer, 1024)) == 0)
+                if ((bytes_read = read( sd , bufer, 1024)) == 0)
                 {
                     //Somebody disconnected , get his details and print
                     getpeername(sd , (struct sockaddr*)&address , (socklen_t*)&addrlen);
@@ -266,18 +257,8 @@ void *tcp_serv_conn()
                     close( sd );
                     client_socket[i] = 0;
                 }
-                //Echo back the message that came in
-                else
-                {
-                    //set the string terminating NULL byte on the end of the data read
-
-                    for(int n =0;n<sizeof(buffer);n++) buffer[n] =buffer[n] +2;
-                    buffer[valread] = '\0';
-                    send(sd , buffer , strlen(buffer) , 0 );
-                }
             }
         }
     }
-      
     return 0;
 }
