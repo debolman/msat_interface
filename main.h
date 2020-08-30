@@ -42,7 +42,7 @@ const bool  tcp_serv_beacon_activate  =  true;
 #define diff_size 1
 #define MAXLINE 1024
 #define UDP_serv_port    7072
-#define TCP_serv_port    6080
+#define TCP_serv_port    8082
 #define TCP_dest_port 8082
 #define SA struct sockaddr
 #define KNRM  "\x1B[0m"
