@@ -20,7 +20,7 @@
 
 void *tcp_cient_count () {
     for(;;) {
-        sleep(10000);
+        sleep(10);
         printf("Connected clients: ");
         for (int i = 0; i < max_clients; i++)
         {
@@ -73,6 +73,21 @@ void *tcp_cli_recv() {
         printf("%llu \n",a);
     }
 }
+
+void *tcp_server_receiver() {
+    for(;;) {
+        bzero(bufer,1024);
+        int num = read(master_socket,bufer,255);
+        //printf("%d ",num);
+        if(TCP_raw & num >0) {
+            for (int n=0;n<num;n++) {
+                printf("%02X ",bufer[n]);
+            }
+            printf("\n");
+        }
+    }
+}
+
 
 void *tcp_cli() {
 
@@ -178,7 +193,9 @@ void *tcp_serv_conn()
     
     pthread_create(&timer, NULL, tcp_cient_count, NULL);
     if(tcp_serv_beacon_activate) pthread_create(&tcp_serv_beacon_thread, NULL, tcp_serv_beacon, NULL);
-   //pthread_join(timer, NULL);
+    //pthread_create(&tcp_rec, NULL, tcp_server_receiver, NULL);
+
+    //pthread_join(timer, NULL);
     //if(tcp_serv_beacon_activate) pthread_join(tcp_serv_beacon_thread, NULL);
      
     for(;;)
@@ -246,6 +263,7 @@ void *tcp_serv_conn()
               
             if (FD_ISSET( sd , &readfds))
             {
+
                 //Check if it was for closing , and also read the incoming message
                 if ((bytes_read = read( sd , bufer, 1024)) == 0)
                 {
@@ -256,6 +274,12 @@ void *tcp_serv_conn()
                     //Close the socket and mark as 0 in list for reuse
                     close( sd );
                     client_socket[i] = 0;
+                }
+                if(TCP_raw & bytes_read >0) {
+                    for (int n=0;n<bytes_read;n++) {
+                        printf("%02X ",bufer[n]);
+                    }
+                    printf("\n");
                 }
             }
         }
