@@ -275,12 +275,17 @@ void *tcp_serv_conn()
                     close( sd );
                     client_socket[i] = 0;
                 }
-                if(TCP_raw & bytes_read >0) {
-                    for (int n=0;n<bytes_read;n++) {
-                        printf("%02X ",bufer[n]);
-                    }
-                    printf("\n");
-                }
+				if(bytes_read>0) {
+					if(serial_activate) {   int wrote_bytes =  write(fd,&bufer,bytes_read);
+					printf("%d \n", wrote_bytes);
+					}
+					if(TCP_raw) {
+						for (int n=0;n<bytes_read;n++) {
+							printf("%02X ",bufer[n]);
+						}
+						printf("\n");
+					}
+				}
             }
         }
     }

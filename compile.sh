@@ -1,5 +1,5 @@
 #!/bin/bash
 rm interface
-cc -pthread -o interface `mariadb_config --cflags --libs --include`  main.c 
-#gcc -pthread -o interface `mariadb_config --cflags --libs --include` main.c
+#cc -pthread -o interface `mariadb_config --cflags --libs --include`  main.c 
+gcc -pthread -o interface  main.c
 ./interface

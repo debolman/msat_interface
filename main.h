@@ -25,10 +25,10 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <netdb.h>
-#include <mysql.h>
+//#include <mysql.h>
 #include <stdbool.h>
 
-const bool  serial_activate =       false;
+const bool  serial_activate =       true;
 const bool  udp_activate   =        false;
 const bool  ram_allocation  =       false;
 const bool  mysql_activate =        false;
@@ -52,8 +52,8 @@ const bool  tcp_serv_beacon_activate  =  true;
 #define KWHT  "\x1B[37m"
 
 
-MYSQL *con;
-bool serial_raw = false;
+//MYSQL *con;
+bool serial_raw = true;
 bool udp_raw = false;
 bool TCP_raw = true;
 

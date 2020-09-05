@@ -36,7 +36,7 @@ void *UDP_listener(void *vargp)
             if(udp_buffer[0] == 0x70) {
                 memcpy(&param, udp_buffer,UDP_recved_len);
                 
-                write_wo_connection(param.id,param.SF, param.coding, param.crc, param.pwr_db, param.pwr_pa,  param.band_i, param.freq_i, param.beacon , param.milis);
+                //write_wo_connection(param.id,param.SF, param.coding, param.crc, param.pwr_db, param.pwr_pa,  param.band_i, param.freq_i, param.beacon , param.milis);
                 
                 
         }
@@ -47,8 +47,6 @@ void *UDP_listener(void *vargp)
                 print_green();
                     
             }
-        if(serial_activate) {   int wrote_bytes =  write(fd,&udp_buffer,UDP_recved_len);
-        }
         }
         
     }

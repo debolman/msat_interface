@@ -20,7 +20,8 @@
 
 void serial_initialize() {
 
-    fd = open("/dev/cu.usbmodem14601",O_RDWR );
+    //fd = open("/dev/cu.usbmodem14601",O_RDWR );
+	fd = open("/dev/ttyS2",O_RDWR );
     if(fd == -1) {
         red();
         printf("Serial port error\n");
@@ -33,8 +34,8 @@ void serial_initialize() {
     }
     struct termios SerialPortSettings;
     tcgetattr(fd, &SerialPortSettings);
-    cfsetispeed(&SerialPortSettings,B9600);
-    cfsetospeed(&SerialPortSettings,B9600);
+    cfsetispeed(&SerialPortSettings,B19200);
+    cfsetospeed(&SerialPortSettings,B19200);
     SerialPortSettings.c_cflag &= ~PARENB;
     SerialPortSettings.c_cflag &= ~CSTOPB;
     SerialPortSettings.c_cflag &= ~CSIZE;
@@ -75,6 +76,16 @@ void *serial_listen(void *vargp)
                 printf("chjk");
                 memcpy(&tlm, read_buffer,bytes_read);
             }
+			for (int i = 0; i < max_clients; i++)
+        {
+            sd = client_socket[i];
+            if (FD_ISSET( sd , &readfds))
+            {
+                unsigned long long  a = unix_secs();
+                memcpy(bufer,(char *)&a,4);
+                send(sd , read_buffer , bytes_read , 0 );
+            }
+        }
         }
         usleep(10000);
     }
