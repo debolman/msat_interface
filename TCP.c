@@ -68,7 +68,7 @@ void *tcp_server_receiver() {
         bzero(bufer,1024);
         int num = read(master_socket,bufer,255);
         //printf("%d ",num);
-        if(TCP_raw & num >0) {
+        if(TCP_raw & (num >0)) {
             for (int n=0;n<num;n++) {
                 printf("%02X ",bufer[n]);
             }
@@ -120,9 +120,7 @@ void *tcp_cli() {
      
             //pthread_create(&timm, NULL, &tcp_cli_send, NULL);
         pthread_create(&tcp_rec, NULL, TCP_client_receive, NULL);
-            //pthread_join(timm, NULL);
         pthread_join(tcp_rec, NULL);
-            //close(sockfd);
     }
 }
 

@@ -44,7 +44,7 @@ void serial_initialize() {
     SerialPortSettings.c_iflag &= ~(  ECHO | ECHOE | ISIG);
     SerialPortSettings.c_oflag &= ~OPOST;
     SerialPortSettings.c_cc[VMIN] = pkt_size;//pkt_size;
-    SerialPortSettings.c_cc[VTIME] = 0.1;
+    SerialPortSettings.c_cc[VTIME] = 1;
     if((tcsetattr(serial_file_descriptor,TCSANOW,&SerialPortSettings)) != 0) {
         red();
         printf("ERROR ! in Setting attributes\n");

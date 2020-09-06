@@ -54,8 +54,8 @@ bool TCP_raw = false;
 
 char hostbuffer[] = "debolman.ns0.it";
 char TCP_dest_addr[] = "10.8.0.1";
-//char serial_port[] \dev\tty.usb..";
-char serial_port[] = "/dev/ttyUSB0";
+char serial_port[] = "/dev/cu.SLAB_USBtoUART";
+//char serial_port[] = "/dev/ttyUSB0";
 //char serial_port[] = "/dev/cu.usbmodem14601";
 
 int serial_file_descriptor, bytes_read, TCP_client_socket, UDP_socket, len, master_socket, activity, sd, addrlen, new_socket, max_sd;
@@ -103,16 +103,4 @@ struct parameters {
     int32_t milis;
 } param;
 
-struct parameter {
-  int8_t id;
-    int8_t id1;
-    int8_t id2;
-    int8_t id3;
-  float V5_v;   //
-  float V5_i;
-  float V5_p;   //
-  float V12_v;
-  float V12_i;  //
-  uint64_t milis;
-    float V12_p;
-} param_green;
+

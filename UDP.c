@@ -39,14 +39,6 @@ void *UDP_listener(void *vargp)
                 #ifndef MYSQL_act_marco
                     write_wo_connection(param.id,param.SF, param.coding, param.crc, param.pwr_db, param.pwr_pa,  param.band_i, param.freq_i, param.beacon , param.milis);
                 #endif
-                
-        }
-            if(UDP_buffer[0] == 0x71) {
-                    //memcpy(&param_green, udp_buffer,UDP_recved_len);
-
-                    //write_wo_connection(param.id,param.SF, param.coding, param.crc, param.pwr_db, param.pwr_pa,  param.band_i, param.freq_i, param.beacon , param.milis);
-                print_green();
-
             }
         }
         
@@ -89,9 +81,4 @@ void UDP_send(unsigned char *hello, int leng) {
     sendto(UDP_socket, (const char *)hello, leng, 0, (const struct sockaddr *) &dest_addr, sizeof(dest_addr));
 }
 
-void print_green() {
-    float a = param_green.milis/1000;
-    printf("\r5V-V %1.2f   5V-I %04.0f   5V_P %04.0f    12V-V %02.2f    12V-I %04.0f    12V-P %04.0f     Millis %06.0f", param_green.V5_v, param_green.V5_i, param_green.V5_p, param_green.V12_v, param_green.V12_i, param_green.V12_p, a);
-    fflush(stdout);
-}
 
