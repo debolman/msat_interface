@@ -20,32 +20,33 @@
 
 void *UDP_listener(void *vargp)
 {
+    struct sockaddr_in rem_addr;
     green();
     printf(" and listening on port %d\n", UDP_serv_port);
     normal();
     while(true) {
         socklen_t len;
-        int UDP_recved_len = recvfrom(UDP_socket, udp_buffer, sizeof(udp_buffer), 0, (struct sockaddr*)&cliaddr,&len);
+        int UDP_recved_len = recvfrom(UDP_socket, UDP_buffer, sizeof(UDP_buffer), 0, (struct sockaddr*)&rem_addr,&len);
         if(UDP_recved_len>0) {
             //UDP_send_f(udp_buffer,UDP_recved_len);
             
             if(udp_raw) {
-              for(int n =0 ; n<UDP_recved_len;n++) printf("%02X ", udp_buffer[n]);
+              for(int n =0 ; n<UDP_recved_len;n++) printf("%02X ", UDP_buffer[n]);
                 printf("\n");
             }
-            if(udp_buffer[0] == 0x70) {
-                memcpy(&param, udp_buffer,UDP_recved_len);
-                
-                //write_wo_connection(param.id,param.SF, param.coding, param.crc, param.pwr_db, param.pwr_pa,  param.band_i, param.freq_i, param.beacon , param.milis);
-                
+            if(UDP_buffer[0] == 0x70) {
+                memcpy(&param, UDP_buffer,UDP_recved_len);
+                #ifndef MYSQL_act_marco
+                    write_wo_connection(param.id,param.SF, param.coding, param.crc, param.pwr_db, param.pwr_pa,  param.band_i, param.freq_i, param.beacon , param.milis);
+                #endif
                 
         }
-            if(udp_buffer[0] == 0x71) {
-                    memcpy(&param_green, udp_buffer,UDP_recved_len);
+            if(UDP_buffer[0] == 0x71) {
+                    //memcpy(&param_green, udp_buffer,UDP_recved_len);
 
                     //write_wo_connection(param.id,param.SF, param.coding, param.crc, param.pwr_db, param.pwr_pa,  param.band_i, param.freq_i, param.beacon , param.milis);
                 print_green();
-                    
+
             }
         }
         
@@ -54,9 +55,10 @@ void *UDP_listener(void *vargp)
 
 
 void socket_initialize() {
+    struct sockaddr_in UDP_server_address;
     if ( (UDP_socket = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) {
         red();
-        printf("Socket creation failed");
+        printf("UDP socket creation failed");
         normal();
         exit(EXIT_FAILURE);
     }
@@ -65,11 +67,11 @@ void socket_initialize() {
         printf("UDP socket activated..");
         normal();
     }
-    bzero(&servaddr, sizeof(servaddr));
-    servaddr.sin_family = AF_INET; // IPv4
-    servaddr.sin_addr.s_addr = INADDR_ANY;
-    servaddr.sin_port = htons(UDP_serv_port);
-    if ( bind(UDP_socket, (const struct sockaddr *)&servaddr, sizeof(servaddr)) < 0 )
+    bzero(&UDP_server_address, sizeof(UDP_server_address));
+    UDP_server_address.sin_family = AF_INET; // IPv4
+    UDP_server_address.sin_addr.s_addr = INADDR_ANY;
+    UDP_server_address.sin_port = htons(UDP_serv_port);
+    if ( bind(UDP_socket, (const struct sockaddr *)&UDP_server_address, sizeof(UDP_server_address)) < 0 )
     {
         red();
         printf("bind failed\n");
@@ -79,19 +81,12 @@ void socket_initialize() {
 }
 
 void UDP_send(unsigned char *hello, int leng) {
-    bzero(&cliaddr, sizeof(cliaddr));
-    cliaddr.sin_family = AF_INET;
-    cliaddr.sin_port = htons(7072);
-    cliaddr.sin_addr.s_addr = inet_addr("192.168.3.56");
-    sendto(UDP_socket, (const char *)hello, leng, 0, (const struct sockaddr *) &cliaddr, sizeof(cliaddr));
-}
-
-void UDP_send_f(unsigned char *hello, int leng) {
-    bzero(&cliaddr, sizeof(cliaddr));
-    cliaddr.sin_family = AF_INET;
-    cliaddr.sin_port = htons(7072);
-    cliaddr.sin_addr.s_addr = inet_addr("192.168.2.56");
-    sendto(UDP_socket, (const char *)hello, leng, 0, (const struct sockaddr *) &cliaddr, sizeof(cliaddr));
+    struct sockaddr_in dest_addr;
+    bzero(&dest_addr, sizeof(dest_addr));
+    dest_addr.sin_family = AF_INET;
+    dest_addr.sin_port = htons(7072);
+    dest_addr.sin_addr.s_addr = inet_addr("192.168.3.56");
+    sendto(UDP_socket, (const char *)hello, leng, 0, (const struct sockaddr *) &dest_addr, sizeof(dest_addr));
 }
 
 void print_green() {

@@ -25,23 +25,47 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <netdb.h>
-//#include <mysql.h>
 #include <stdbool.h>
 
-const bool  serial_activate =       true;
-const bool  udp_activate   =        false;
-const bool  ram_allocation  =       false;
-const bool  mysql_activate =        false;
-const bool  file_activate  =        false;
-const bool  tcp_serv_activate  =    true;
-const bool  tcp_client_activate  =  false;
-const bool  tcp_serv_beacon_activate  =  true;
+bool  serial_activate =       true;
+bool  UDP_activate   =        false;
+bool  mysql_activate =        false;
+bool  file_activate  =        false;
+bool  TCP_server_activate  =    true;
+bool  TCP_client_activate  =  false;
+bool  TCP_server_beacon  =  true;
+bool serial_raw = false;
+bool udp_raw = false;
+bool TCP_raw = false;
 
-#define MAXEVENTS 64
-#define pkt_size  44
+#define MYSQL_act_marco
+//#define MAXEVENTS 64
+#define pkt_size  92
+#define serial_baudrate B115200
 #define UDP_serv_port 7072
 #define TCP_serv_port 8082
 #define TCP_dest_port 8082
+
+#ifndef MYSQL_act_marco
+    #include <mysql.h>
+    MYSQL *con;
+#endif
+
+
+char hostbuffer[] = "debolman.ns0.it";
+char TCP_dest_addr[] = "10.8.0.1";
+//char serial_port[] \dev\tty.usb..";
+char serial_port[] = "/dev/ttyUSB0";
+//char serial_port[] = "/dev/cu.usbmodem14601";
+
+int serial_file_descriptor, bytes_read, TCP_client_socket, UDP_socket, len, master_socket, activity, sd, addrlen, new_socket, max_sd;
+pthread_t serial_thread, udp_thread, mysql_thread, file_thread, timer_thread, tcp_serv_thread, tcp_cli_thread, tcp_rec, timer, tcp_serv_beacon_thread;
+unsigned char UDP_buffer[1024];
+unsigned char bufer[1025];
+char command[10][32];
+int client_socket[30];
+int max_clients = 4;;
+fd_set readfds;
 #define KNRM  "\x1B[0m"
 #define KRED  "\x1B[31m"
 #define KGRN  "\x1B[32m"
@@ -51,54 +75,9 @@ const bool  tcp_serv_beacon_activate  =  true;
 #define KCYN  "\x1B[36m"
 #define KWHT  "\x1B[37m"
 
-
-//MYSQL *con;
-bool serial_raw = true;
-bool udp_raw = false;
-bool TCP_raw = true;
-
-int fd, bytes_read, TCP_client_socket, UDP_socket, len, master_socket, activity, sd, addrlen, new_socket, max_sd;
-struct  tm *ts;
-unsigned char udp_buffer[1024];
-char command[10][32];
-pthread_t serial_thread, udp_thread, udp_sample_thread, mysql_thread, log_thread, file_thread, timer_thread, tcp_serv_thread, tcp_cli_thread, tcp_rec, timer, tcp_serv_beacon_thread;
-struct sockaddr_in servaddr, cliaddr, address;
-char hostbuffer[] = "debolman.ns0.it";
-char TCP_dest_addr[] = "10.8.0.1";
-unsigned long long toc, tic;
-int counter = 0;
-int client_socket[30];
-int max_clients = 4;;
-unsigned char bufer[1025];
-fd_set readfds;
-
-typedef struct {
-    int id;
-    double latitud;
-    int sat_n;
-    double longitud;
-    int unix_time;
-    double altitud;
-}  tlm_sct;
-
-struct tlm_sct {
-  char id;
-  char leng;
-  int16_t freq_er_hz;
-  int16_t rssi; //4
-  int8_t snr;
-  bool act_sender;
-  int32_t milis_r;
-  int32_t milis_p;
-  int8_t SF;
-  int8_t pwr_db;
-  int8_t pwr_pa;
-  int8_t coding_rate;
-  int32_t band;
-} tlm;
-
 void decode_tlm();
-void *log_thd();
+unsigned long long unix_seconds();
+unsigned long long unix_milliseconds();
 void UDP_send(unsigned char *hello, int leng);
 void red();
 void green();
@@ -109,10 +88,7 @@ void print_green();
 void cyan();
 void white() ;
 void normal() ;
-unsigned long long unix_secs() ;
-void UDP_send_f(unsigned char *hello, int leng) ;
 void write_wo_connection( int a, int b, int c, int d, int e, int f, int g, int h, int i, int j);
-
 
 struct parameters {
   int8_t id;
@@ -126,7 +102,6 @@ struct parameters {
   int8_t beacon;
     int32_t milis;
 } param;
-
 
 struct parameter {
   int8_t id;

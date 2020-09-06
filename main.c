@@ -27,12 +27,14 @@
 #include <netdb.h>
 #include "main.h"
 #include "serial.c"
-#include "net_TCP.c"
-#include "net_UDP.c"
-//#include <mysql.h>
-//#include "mysql.c"
+#include "TCP.c"
+#include "UDP.c"
+#ifndef MYSQL_act_marco
+    #include <mysql.h>
+    #include "mysql.c"
+#endif
 
-unsigned long long  unix_mils() {
+unsigned long long  unix_milliseconds() {
     struct timeval tv;
     gettimeofday(&tv, NULL);
     unsigned long long millisecondsSinceEpoch =
@@ -41,19 +43,11 @@ unsigned long long  unix_mils() {
     return millisecondsSinceEpoch;
 }
 
-unsigned long long  unix_secs() {
+unsigned long long  unix_seconds() {
     struct timeval tv;
     gettimeofday(&tv, NULL);
     unsigned long long millisecondsSinceEpoch = (unsigned long long)(tv.tv_sec);
     return millisecondsSinceEpoch;
-}
-
-void commands_strings() {
-    strcpy(command[0], "s");
-    strcpy(command[1], "udp off");
-    strcpy(command[2], "serial");
-    strcpy(command[3], "serial off");
-    strcpy(command[4], "close");
 }
 
 void red() {printf("%s", KRED);}
@@ -73,39 +67,34 @@ void *file_management() {
     buffer_file[0] = 57;
     printf("read \n");
     for(int n =0;n<40000;n++) {
-        
         int letti = read(file,buffer_file+1,pkt_size-1);
         UDP_send(buffer_file,pkt_size);
         usleep(10000);
-        //printf("%d \n",n);
-        printf("%d %d %02X %02X %02X\n",n, buffer_file[0], buffer_file[1], buffer_file[2], buffer_file[3]);
-        
+        printf("%d %02X %02X %02X\n",n, buffer_file[0], buffer_file[1], buffer_file[2]);
     }
     printf("end \n");
     return 0;
 }
 
-
 int main(void) {
     green();
     printf("Hello!\n");
     normal();
-	commands_strings();
-    if(serial_activate) serial_initialize();
-    if (udp_activate) socket_initialize();
-    if (udp_activate) pthread_create(&udp_thread, NULL, UDP_listener, NULL);
-    if(file_activate) pthread_create(&file_thread, NULL, file_management, NULL);
-    if(serial_activate) pthread_create(&serial_thread, NULL, serial_listen, NULL);
-    if(tcp_serv_activate) pthread_create(&tcp_serv_thread, NULL, tcp_serv_conn, NULL);
-    if(tcp_client_activate) pthread_create(&tcp_cli_thread, NULL, tcp_cli, NULL);
-    //if (mysql_activate) pthread_create(&mysql_thread, NULL, mysql_log, NULL);
-    //if (mysql_activate) mysql_connection();
-    //pthread_join(mysql_thread, NULL);
-    if(tcp_serv_activate) pthread_join(tcp_serv_thread, NULL);
-    if(tcp_client_activate) pthread_join(tcp_cli_thread, NULL);
-    if(serial_activate) pthread_join(serial_thread, NULL);
-    if (udp_activate) pthread_join(udp_thread, NULL);
-    if(serial_activate) close(fd);
-    if (udp_activate) close(UDP_socket);
+    if (serial_activate) serial_initialize();
+    if (UDP_activate) socket_initialize();
+    if (UDP_activate) pthread_create(&udp_thread, NULL, UDP_listener, NULL);
+    if (file_activate) pthread_create(&file_thread, NULL, file_management, NULL);
+    if (serial_activate) pthread_create(&serial_thread, NULL, serial_listen, NULL);
+    if (TCP_server_activate) pthread_create(&tcp_serv_thread, NULL, tcp_serv_conn, NULL);
+    if (TCP_client_activate) pthread_create(&tcp_cli_thread, NULL, tcp_cli, NULL);
+    #ifndef MYSQL_act_marco
+        if (mysql_activate) pthread_create(&mysql_thread, NULL, mysql_log, NULL);
+        if (mysql_activate) mysql_connection();
+        pthread_join(mysql_thread, NULL);
+    #endif
+    if (TCP_client_activate) pthread_join(tcp_cli_thread, NULL);
+    if (TCP_server_activate) pthread_join(tcp_serv_thread, NULL);;
+    if (serial_activate) pthread_join(serial_thread, NULL);
+    if (UDP_activate) pthread_join(udp_thread, NULL);
 }
 

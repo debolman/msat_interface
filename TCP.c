@@ -37,7 +37,7 @@ void *tcp_serv_beacon() {
             sd = client_socket[i];
             if (FD_ISSET( sd , &readfds))
             {
-                unsigned long long  a = unix_secs();
+                unsigned long long a = unix_seconds();
                 memcpy(bufer,(char *)&a,4);
                 send(sd , bufer , 4 , 0 );
             }
@@ -46,18 +46,7 @@ void *tcp_serv_beacon() {
     }
 }
 
-void* tcp_cli_send() {
-    for(;;) {
-        printf("%llu \n", unix_secs() );
-        unsigned long ti = unix_secs();
-        memcpy(bufer,(unsigned char *)&ti,4);
-    int g = write(TCP_client_socket, bufer, 4);
-    //printf("write: %d\n",g);
-        sleep(1000);
-    }
-}
-
-void *tcp_cli_recv() {
+void *TCP_client_receive() {
     for(;;) {
         bzero(bufer,1024);
         int num = read(TCP_client_socket,bufer,255);
@@ -130,15 +119,15 @@ void *tcp_cli() {
         }
      
             //pthread_create(&timm, NULL, &tcp_cli_send, NULL);
-        pthread_create(&tcp_rec, NULL, tcp_cli_recv, NULL);
+        pthread_create(&tcp_rec, NULL, TCP_client_receive, NULL);
             //pthread_join(timm, NULL);
         pthread_join(tcp_rec, NULL);
             //close(sockfd);
     }
 }
 
-void *tcp_serv_conn()
-{
+void *tcp_serv_conn() {
+    struct sockaddr_in TCP_server_address;
     int opt = 1;
     //initialise all client_socket[] to 0 so not checked
     for (int i = 0; i < max_clients; i++)
@@ -162,12 +151,12 @@ void *tcp_serv_conn()
     }
   
     //type of socket created
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons( TCP_serv_port );
+    TCP_server_address.sin_family = AF_INET;
+    TCP_server_address.sin_addr.s_addr = INADDR_ANY;
+    TCP_server_address.sin_port = htons( TCP_serv_port );
       
     //bind the socket to localhost port 8888
-    if (bind(master_socket, (struct sockaddr *)&address, sizeof(address))<0)
+    if (bind(master_socket, (struct sockaddr *)&TCP_server_address, sizeof(TCP_server_address))<0)
     {
         red();
         perror("bind failed");
@@ -175,7 +164,7 @@ void *tcp_serv_conn()
         exit(EXIT_FAILURE);
     }
     green();
-    printf("Listener on port %d \n", TCP_serv_port);
+    printf("TCP listening on port %d \n", TCP_serv_port);
     normal();
      
     //try to specify maximum of 3 pending connections for the master socket
@@ -186,15 +175,13 @@ void *tcp_serv_conn()
     }
       
     //accept the incoming connection
-    addrlen = sizeof(address);
+    addrlen = sizeof(TCP_server_address);
     green();
-    puts("Waiting for connections ...");
+    puts("Waiting for TCP clients...");
     normal();
     
-    pthread_create(&timer, NULL, tcp_cient_count, NULL);
-    if(tcp_serv_beacon_activate) pthread_create(&tcp_serv_beacon_thread, NULL, tcp_serv_beacon, NULL);
-    //pthread_create(&tcp_rec, NULL, tcp_server_receiver, NULL);
-
+//    pthread_create(&timer, NULL, tcp_cient_count, NULL);
+    if(TCP_server_beacon) pthread_create(&tcp_serv_beacon_thread, NULL, tcp_serv_beacon, NULL);
     //pthread_join(timer, NULL);
     //if(tcp_serv_beacon_activate) pthread_join(tcp_serv_beacon_thread, NULL);
      
@@ -233,14 +220,14 @@ void *tcp_serv_conn()
         //If something happened on the master socket , then its an incoming connection
         if (FD_ISSET(master_socket, &readfds))
         {
-            if ((new_socket = accept(master_socket, (struct sockaddr *)&address, (socklen_t*)&addrlen))<0)
+            if ((new_socket = accept(master_socket, (struct sockaddr *)&TCP_server_address, (socklen_t*)&addrlen))<0)
             {
                 perror("accept");
                 exit(EXIT_FAILURE);
             }
           
             //inform user of socket number - used in send and receive commands
-            printf("New connection , socket fd is %d , ip is : %s , port : %d \n" , new_socket , inet_ntoa(address.sin_addr) , ntohs(address.sin_port));
+            printf("New connection on socket %d from: %s:%d\n" , new_socket , inet_ntoa(TCP_server_address.sin_addr) , ntohs(TCP_server_address.sin_port));
 
             //add new socket to array of sockets
             for (int i = 0; i < max_clients; i++)
@@ -249,7 +236,7 @@ void *tcp_serv_conn()
                 if( client_socket[i] == 0 )
                 {
                     client_socket[i] = new_socket;
-                    printf("Adding to list of sockets as %d\n" , i);
+//                    printf("Adding to list of sockets as %d\n" , i);
                      
                     break;
                 }
@@ -260,24 +247,22 @@ void *tcp_serv_conn()
         for (int i = 0; i < max_clients; i++)
         {
             sd = client_socket[i];
-              
             if (FD_ISSET( sd , &readfds))
             {
-
                 //Check if it was for closing , and also read the incoming message
                 if ((bytes_read = read( sd , bufer, 1024)) == 0)
                 {
                     //Somebody disconnected , get his details and print
-                    getpeername(sd , (struct sockaddr*)&address , (socklen_t*)&addrlen);
-                    printf("Host disconnected , ip %s , port %d \n" , inet_ntoa(address.sin_addr) , ntohs(address.sin_port));
+                    getpeername(sd , (struct sockaddr*)&TCP_server_address , (socklen_t*)&addrlen);
+                    printf("Host disconnected: %s:%d \n" , inet_ntoa(TCP_server_address.sin_addr) , ntohs(TCP_server_address.sin_port));
                       
                     //Close the socket and mark as 0 in list for reuse
                     close( sd );
                     client_socket[i] = 0;
                 }
 				if(bytes_read>0) {
-					if(serial_activate) {   int wrote_bytes =  write(fd,&bufer,bytes_read);
-					printf("%d \n", wrote_bytes);
+					if(serial_activate) {   int wrote_bytes =  write(serial_file_descriptor,&bufer,bytes_read);
+					printf("TCP received: %d %02X %02X %02X\n", wrote_bytes, bufer[0], bufer[1], bufer[2]);
 					}
 					if(TCP_raw) {
 						for (int n=0;n<bytes_read;n++) {
