@@ -28,6 +28,8 @@ void *UDP_listener(void *vargp)
         socklen_t len;
         int UDP_recved_len = recvfrom(UDP_socket, UDP_buffer, sizeof(UDP_buffer), 0, (struct sockaddr*)&rem_addr,&len);
         if(UDP_recved_len>0) {
+            printf("UDP: %d %02X %02X %02X \n",  UDP_recved_len, UDP_buffer[0], UDP_buffer[1], UDP_buffer[2]);
+        
             //UDP_send_f(udp_buffer,UDP_recved_len);
             
             if(udp_raw) {
@@ -40,6 +42,15 @@ void *UDP_listener(void *vargp)
                     write_wo_connection(param.id,param.SF, param.coding, param.crc, param.pwr_db, param.pwr_pa,  param.band_i, param.freq_i, param.beacon , param.milis);
                 #endif
             }
+            		if(TCP_server_activate) {
+			for (int i = 0; i < max_clients; i++) {
+		            	sd = client_socket[i];
+        		   	if (FD_ISSET( sd , &readfds)) {
+           	     		int se = send(sd , UDP_buffer , UDP_recved_len , 0 );
+            		}
+		
+            }
+        }
         }
         
     }

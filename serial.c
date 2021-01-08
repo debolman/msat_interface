@@ -57,11 +57,12 @@ void *serial_listen(void *vargp)
     green();
     printf("Serial listening\n");
     normal();
+        FILE *fp = fopen ("/Users/diego/pic.jpg","w");
     while(true) {
         tcflush(serial_file_descriptor, TCIFLUSH);
         unsigned char read_buffer[pkt_size];
         bytes_read = read(serial_file_descriptor,&read_buffer,pkt_size);
-        printf("Serial received: %d %02X %02X %02X \n",  bytes_read, read_buffer[0], read_buffer[1], read_buffer[2]);
+        printf("UART: %d %02X %02X %02X \n",  bytes_read, read_buffer[0], read_buffer[1], read_buffer[2]);
         if(bytes_read >0) {
             if(serial_raw) {
                 for(int n =0;n< bytes_read;n++)
@@ -74,10 +75,26 @@ void *serial_listen(void *vargp)
 		            	sd = client_socket[i];
         		   	if (FD_ISSET( sd , &readfds)) {
            	     		int se = send(sd , read_buffer , bytes_read , 0 );
+                             
             		}
 		}
             }
         }
+                    if(read_buffer[0] == 0x11) {
+                printf("dect \n");
+                //if(read_buffer[1] == 1) {
+                    fclose(fp);
+                    printf("closed \n");
+                    usleep(10000);
+                    printf("opened\n");
+                    fp = fopen ("/Users/diego/pic.jpg","w");
+                //}
+            }
+            if(read_buffer[0] == 0x57) {
+                //printf("chjk \n");
+                memcpy(&bufer, &read_buffer[4],bytes_read-4);
+                fwrite(bufer,1, bytes_read-4, fp);
+            }
         usleep(10000);
     }
     return NULL;

@@ -28,21 +28,21 @@
 #include <stdbool.h>
 
 bool  serial_activate =       true;
-bool  UDP_activate   =        false;
+bool  UDP_activate   =        true;
 bool  mysql_activate =        false;
 bool  file_activate  =        false;
 bool  TCP_server_activate  =    true;
 bool  TCP_client_activate  =  false;
-bool  TCP_server_beacon  =  true;
+bool  TCP_server_beacon  =  false;
 bool serial_raw = false;
 bool udp_raw = false;
 bool TCP_raw = false;
 
 #define MYSQL_act_marco
 //#define MAXEVENTS 64
-#define pkt_size  92
-#define serial_baudrate B115200
-#define UDP_serv_port 7072
+#define pkt_size  128
+#define serial_baudrate B230400
+#define UDP_serv_port 1235
 #define TCP_serv_port 8082
 #define TCP_dest_port 8082
 
@@ -54,9 +54,9 @@ bool TCP_raw = false;
 
 char hostbuffer[] = "debolman.ns0.it";
 char TCP_dest_addr[] = "10.8.0.1";
-char serial_port[] = "/dev/cu.SLAB_USBtoUART";
+//char serial_port[] = "/dev/cu.SLAB_USBtoUART";
 //char serial_port[] = "/dev/ttyUSB0";
-//char serial_port[] = "/dev/cu.usbmodem14601";
+char serial_port[] = "/dev/cu.usbmodem14501";
 
 int serial_file_descriptor, bytes_read, TCP_client_socket, UDP_socket, len, master_socket, activity, sd, addrlen, new_socket, max_sd;
 pthread_t serial_thread, udp_thread, mysql_thread, file_thread, timer_thread, tcp_serv_thread, tcp_cli_thread, tcp_rec, timer, tcp_serv_beacon_thread;
