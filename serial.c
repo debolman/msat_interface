@@ -82,16 +82,15 @@ void *serial_listen(void *vargp)
         }
                     if(read_buffer[0] == 0x11) {
                 printf("dect \n");
-                //if(read_buffer[1] == 1) {
+                if(read_buffer[1] == 1) {
                     fclose(fp);
                     printf("closed \n");
                     usleep(10000);
                     printf("opened\n");
                     fp = fopen ("/Users/diego/pic.jpg","w");
-                //}
+                }
             }
-            if(read_buffer[0] == 0x57) {
-                //printf("chjk \n");
+            if(read_buffer[0] == 0x30) {
                 memcpy(&bufer, &read_buffer[4],bytes_read-4);
                 fwrite(bufer,1, bytes_read-4, fp);
             }

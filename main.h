@@ -28,7 +28,7 @@
 #include <stdbool.h>
 
 bool  serial_activate =       true;
-bool  UDP_activate   =        true;
+bool  UDP_activate   =        false;
 bool  mysql_activate =        false;
 bool  file_activate  =        false;
 bool  TCP_server_activate  =    true;
@@ -56,7 +56,9 @@ char hostbuffer[] = "debolman.ns0.it";
 char TCP_dest_addr[] = "10.8.0.1";
 //char serial_port[] = "/dev/cu.SLAB_USBtoUART";
 //char serial_port[] = "/dev/ttyUSB0";
-char serial_port[] = "/dev/cu.usbmodem14501";
+//char serial_port[] = "/dev/cu.usbmodem14501";
+//char serial_port[] = "/dev/cu.usbserial-FT2GNWLC";
+char serial_port[] = "/dev/cu.usbserial-FT0HBRMT";
 
 int serial_file_descriptor, bytes_read, TCP_client_socket, UDP_socket, len, master_socket, activity, sd, addrlen, new_socket, max_sd;
 pthread_t serial_thread, udp_thread, mysql_thread, file_thread, timer_thread, tcp_serv_thread, tcp_cli_thread, tcp_rec, timer, tcp_serv_beacon_thread;

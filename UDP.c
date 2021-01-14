@@ -24,6 +24,7 @@ void *UDP_listener(void *vargp)
     green();
     printf(" and listening on port %d\n", UDP_serv_port);
     normal();
+        FILE *fp = fopen ("/Users/diego/pic.jpg","w");
     while(true) {
         socklen_t len;
         int UDP_recved_len = recvfrom(UDP_socket, UDP_buffer, sizeof(UDP_buffer), 0, (struct sockaddr*)&rem_addr,&len);
@@ -49,6 +50,20 @@ void *UDP_listener(void *vargp)
            	     		int se = send(sd , UDP_buffer , UDP_recved_len , 0 );
             		}
 		
+            }
+                if(UDP_buffer[0] == 0x11) {
+                    printf("dect \n");
+                    if(UDP_buffer[1] == 1) {
+                        fclose(fp);
+                        printf("closed \n");
+                        usleep(10000);
+                        printf("opened\n");
+                        fp = fopen ("/Users/diego/pic.jpg","w");
+                    }
+                }
+            if(UDP_buffer[0] == 0x57 ) { //0x30) {
+                memcpy(&bufer, &UDP_buffer[4],UDP_recved_len-4);
+                fwrite(bufer,1, UDP_recved_len-4, fp);
             }
         }
         }
