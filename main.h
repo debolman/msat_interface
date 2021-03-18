@@ -31,7 +31,7 @@ bool  serial_activate =       true;
 bool  UDP_activate   =        false;
 bool  mysql_activate =        false;
 bool  file_activate  =        false;
-bool  TCP_server_activate  =    true;
+bool  TCP_server_activate  =    false;
 bool  TCP_client_activate  =  false;
 bool  TCP_server_beacon  =  false;
 bool serial_raw = false;
@@ -40,7 +40,7 @@ bool TCP_raw = false;
 
 #define MYSQL_act_marco
 //#define MAXEVENTS 64
-#define pkt_size  128
+#define pkt_size  100
 #define serial_baudrate B230400
 #define UDP_serv_port 1235
 #define TCP_serv_port 8082
@@ -68,6 +68,11 @@ char command[10][32];
 int client_socket[30];
 int max_clients = 4;;
 fd_set readfds;
+FILE *picture_file; 
+uint8_t picture_array[5000000];
+uint32_t picture_index;
+  char time_string[64] = {};
+  char print_buffer[128] = {};
 #define KNRM  "\x1B[0m"
 #define KRED  "\x1B[31m"
 #define KGRN  "\x1B[32m"
@@ -78,7 +83,7 @@ fd_set readfds;
 #define KWHT  "\x1B[37m"
 
 void decode_tlm();
-unsigned long long unix_seconds();
+void time_human();
 unsigned long long unix_milliseconds();
 void UDP_send(unsigned char *hello, int leng);
 void red();

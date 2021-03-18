@@ -37,7 +37,7 @@ void *tcp_serv_beacon() {
             sd = client_socket[i];
             if (FD_ISSET( sd , &readfds))
             {
-                unsigned long long a = unix_seconds();
+                unsigned long long a = (unsigned long long)time(NULL);
                 memcpy(bufer,(char *)&a,4);
                 send(sd , bufer , 4 , 0 );
             }

@@ -43,11 +43,14 @@ unsigned long long  unix_milliseconds() {
     return millisecondsSinceEpoch;
 }
 
-unsigned long long  unix_seconds() {
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    unsigned long long millisecondsSinceEpoch = (unsigned long long)(tv.tv_sec);
-    return millisecondsSinceEpoch;
+void time_human() {
+  struct timeval  now;
+  struct tm*      local;
+
+  gettimeofday(&now, NULL);
+  local = localtime(&now.tv_sec);
+    char stri[] = {"%02d%02d%02d-%02d%02d%02d"};
+  sprintf(time_string,stri,local->tm_year+1900, local->tm_mon+1, local->tm_mday,local->tm_hour, local->tm_min, local->tm_sec);
 }
 
 void red() {printf("%s", KRED);}
