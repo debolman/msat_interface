@@ -259,8 +259,12 @@ void *tcp_serv_conn() {
                     client_socket[i] = 0;
                 }
 				if(bytes_read>0) {
-					if(serial_activate) {   int wrote_bytes =  write(serial_file_descriptor,&bufer,bytes_read);
-					printf("TCP: %d %02X %02X %02X\n", wrote_bytes, bufer[0], bufer[1], bufer[2]);
+					if(serial_activate) {   int wrote_bytes =  write(serial_port,&bufer,bytes_read);
+					        time_human();
+        char preview[128] = {"%s - TCP: %02X %02X %02X %02X \n"};
+        sprintf(print_buffer,preview, time_string, bufer[0], bufer[1], bufer[2], bufer[3]);
+        printf("%s",print_buffer);
+
 					}
 					if(TCP_raw) {
 						for (int n=0;n<bytes_read;n++) {

@@ -18,38 +18,51 @@
 #include <stdbool.h>
 #include <netdb.h>
 
-void serial_initialize() {
-	serial_file_descriptor = open(serial_port,O_RDWR );
-    if(serial_file_descriptor == -1) {
-        red();
-        printf("Serial port error\n");
-        normal();
-    }
-    else {
-        green();
-        printf("Serial port opened\n");
-        normal();
-    }
-    struct termios SerialPortSettings;
-    tcgetattr(serial_file_descriptor, &SerialPortSettings);
-    cfsetispeed(&SerialPortSettings,serial_baudrate);
-    cfsetospeed(&SerialPortSettings,serial_baudrate);
-    SerialPortSettings.c_cflag &= ~PARENB;
-    SerialPortSettings.c_cflag &= ~CSTOPB;
-    SerialPortSettings.c_cflag &= ~CSIZE;
-    SerialPortSettings.c_cflag |=  CS8;
-    SerialPortSettings.c_cflag &= ~CRTSCTS;
-    SerialPortSettings.c_cflag |= CREAD | CLOCAL;
-    SerialPortSettings.c_iflag &= ~(IXON | IXOFF | IXANY);
-    SerialPortSettings.c_iflag &= ~(  ECHO | ECHOE | ISIG);
-    SerialPortSettings.c_oflag &= ~OPOST;
-    SerialPortSettings.c_cc[VMIN] = pkt_size;//pkt_size;
-    SerialPortSettings.c_cc[VTIME] = 1;
-    if((tcsetattr(serial_file_descriptor,TCSANOW,&SerialPortSettings)) != 0) {
-        red();
-        printf("ERROR ! in Setting attributes\n");
-        normal();
-    }
+int serial_initialize() {
+    serial_port = open(serial_port_name, O_RDWR);
+  struct termios tty;
+  if(tcgetattr(serial_port, &tty) != 0) {
+      red();
+      printf("Error %i from tcgetattr: %s\n", errno, strerror(errno));
+      normal();
+      return 1;
+  }
+
+  tty.c_cflag &= ~PARENB; // Clear parity bit, disabling parity (most common)
+  tty.c_cflag &= ~CSTOPB; // Clear stop field, only one stop bit used in communication (most common)
+  tty.c_cflag &= ~CSIZE; // Clear all bits that set the data size 
+  tty.c_cflag |= CS8; // 8 bits per byte (most common)
+  tty.c_cflag &= ~CRTSCTS; // Disable RTS/CTS hardware flow control (most common)
+  tty.c_cflag |= CREAD | CLOCAL; // Turn on READ & ignore ctrl lines (CLOCAL = 1)
+
+  tty.c_lflag &= ~ICANON;
+  tty.c_lflag &= ~ECHO; // Disable echo
+  tty.c_lflag &= ~ECHOE; // Disable erasure
+  tty.c_lflag &= ~ECHONL; // Disable new-line echo
+  tty.c_lflag &= ~ISIG; // Disable interpretation of INTR, QUIT and SUSP
+  tty.c_iflag &= ~(IXON | IXOFF | IXANY); // Turn off s/w flow ctrl
+  tty.c_iflag &= ~(IGNBRK|BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL); // Disable any special handling of received bytes
+
+  tty.c_oflag &= ~OPOST; // Prevent special interpretation of output bytes (e.g. newline chars)
+  tty.c_oflag &= ~ONLCR; // Prevent conversion of newline to carriage return/line feed
+  // tty.c_oflag &= ~OXTABS; // Prevent conversion of tabs to spaces (NOT PRESENT ON LINUX)
+  // tty.c_oflag &= ~ONOEOT; // Prevent removal of C-d chars (0x004) in output (NOT PRESENT ON LINUX)
+
+  tty.c_cc[VTIME] = 1;    // Wait for up to 1s (10 deciseconds), returning as soon as any data is received.
+  tty.c_cc[VMIN] = pkt_size;
+
+  // Set in/out baud rate to be 9600
+  cfsetispeed(&tty, serial_baudrate);
+  cfsetospeed(&tty, serial_baudrate);
+
+  // Save tty settings, also checking for error
+  if (tcsetattr(serial_port, TCSANOW, &tty) != 0) {
+      red();
+      printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
+      normal();
+      return 1;
+  }
+  return 0;
 }
 
 void *serial_listen(void *vargp)
@@ -59,10 +72,12 @@ void *serial_listen(void *vargp)
     normal();
         FILE *fp = fopen ("/Users/diego/pic.jpg","w");
     while(true) {
-        tcflush(serial_file_descriptor, TCIFLUSH);
         unsigned char read_buffer[pkt_size];
-        bytes_read = read(serial_file_descriptor,&read_buffer,pkt_size);
-        printf("UART: %d %02X %02X %02X \n",  bytes_read, read_buffer[0], read_buffer[1], read_buffer[2]);
+        bytes_read = read(serial_port,&read_buffer,pkt_size);
+        time_human();
+        char preview[128] = {"%s - UART: %d - %02X %02X %02X %02X \n"};
+        sprintf(print_buffer,preview, time_string, bytes_read, read_buffer[0], read_buffer[1], read_buffer[2], read_buffer[3]);
+        printf("%s",print_buffer);
         if(bytes_read >0) {
             if(serial_raw) {
                 for(int n =0;n< bytes_read;n++)
@@ -77,35 +92,60 @@ void *serial_listen(void *vargp)
            	     		int se = send(sd , read_buffer , bytes_read , 0 );
                              
             		}
-		}
+		        }
             }
         }
-      if(bytes_read == 100 && read_buffer[0] == 0x40) {
-                uint16_t num;
-                memcpy(&num,read_buffer+2,2);
-                picture_index = (num)*96;
-                            printf("%d ",picture_index);
-                memcpy(&picture_array[picture_index],&read_buffer[4],96);
+        if(bytes_read == 100 && read_buffer[0] == 0x40) {
+            uint16_t num;
+            memcpy(&num,read_buffer+2,2);
+            picture_index = (num)*96;
+                        printf("%d ",picture_index);
+            memcpy(&picture_array[picture_index],&read_buffer[4],96);
+            if (counter++>10) {
+                save_picture_file(picture_array);
+                counter=0;
             }
-            if(bytes_read == 100 && read_buffer[0] == 0x41) {
-                                        time_human();
-                        char preview[128] = {"%s - TCP: %02X %02X %02X %02X \n"};
-                        sprintf(print_buffer,preview, time_string, bufer[0], bufer[1], bufer[2], bufer[3]);
-                        //printf(print_buffer);
-                        char filename[64] = {};
-                        char buf[] = {"/Users/diego/pictures/%s.jpg"};
-                        char buf2[] = {"/Users/diego/pic.jpg"};
-                        sprintf(filename, buf,time_string);
-                        picture_file = fopen (filename,"w");
-                        //picture_file = fopen (buf2,"w");
-                        fwrite(picture_array,1, picture_index, picture_file);
-                        fclose(picture_file);
-                        printf("file saved \n");
-                        memset(picture_array, 0, sizeof(picture_array));
-                    
-            }
+        }
+        if(bytes_read == 100 && read_buffer[0] == 0x41) {
+                    char filename[64] = {};
+                    char buf[] = {"/Users/diego/pictures/%s.jpg"};
+                    char buf2[] = {"/Users/diego/pic.jpg"};
+                    sprintf(filename, buf,time_string);
+                    //picture_file = fopen (filename,"w");
+                    picture_file = fopen (buf2,"w");
+                    fwrite(picture_array,1, picture_index, picture_file);
+                    fclose(picture_file);
+                    printf("file saved \n");
+                    memset(picture_array, 0, sizeof(picture_array));
+        }
+
+        //         if(read_buffer[0] == 0x11) {
+        //     printf("dect \n");
+        //     if(read_buffer[1] == 1) {
+        //         fclose(fp);
+        //         printf("closed \n");
+        //         usleep(10000);
+        //         printf("opened\n");
+        //         fp = fopen ("/Users/diego/pic.jpg","w");
+        //     }
+        // }
+        // if(read_buffer[0] == 0x30) {
+        //     memcpy(&bufer, &read_buffer[4],bytes_read-4);
+        //     fwrite(bufer,1, bytes_read-4, fp);
+        // }
 
         usleep(10000);
     }
     return NULL;
+}
+
+void save_picture_file(uint8_t picture_array[]) {
+                        char filename[64] = {};
+                    char buf[] = {"/Users/diego/pictures/%s.jpg"};
+                    char buf2[] = {"/Users/diego/pic.jpg"};
+                    sprintf(filename, buf,time_string);
+                    //picture_file = fopen (filename,"w");
+                    picture_file = fopen (buf2,"w");
+                    fwrite(picture_array,1, picture_index, picture_file);
+                    fclose(picture_file);
 }

@@ -29,10 +29,8 @@
 #include "serial.c"
 #include "TCP.c"
 #include "UDP.c"
-#ifndef MYSQL_act_marco
-    #include <mysql.h>
-    #include "mysql.c"
-#endif
+#include <mysql.h>
+#include "mysql.c"
 
 unsigned long long  unix_milliseconds() {
     struct timeval tv;
@@ -90,11 +88,9 @@ int main(void) {
     if (serial_activate) pthread_create(&serial_thread, NULL, serial_listen, NULL);
     if (TCP_server_activate) pthread_create(&tcp_serv_thread, NULL, tcp_serv_conn, NULL);
     if (TCP_client_activate) pthread_create(&tcp_cli_thread, NULL, tcp_cli, NULL);
-    #ifndef MYSQL_act_marco
-        if (mysql_activate) pthread_create(&mysql_thread, NULL, mysql_log, NULL);
-        if (mysql_activate) mysql_connection();
-        pthread_join(mysql_thread, NULL);
-    #endif
+    //if (mysql_activate) pthread_create(&mysql_thread, NULL, mysql_log, NULL);
+    if (mysql_activate) mysql_connection();
+    if (mysql_activate) pthread_join(mysql_thread, NULL);
     if (TCP_client_activate) pthread_join(tcp_cli_thread, NULL);
     if (TCP_server_activate) pthread_join(tcp_serv_thread, NULL);;
     if (serial_activate) pthread_join(serial_thread, NULL);
