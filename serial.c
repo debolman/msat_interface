@@ -19,13 +19,18 @@
 #include <netdb.h>
 
 int serial_initialize() {
-    serial_port = open(serial_port_name, O_RDWR);
+       serial_port = open(serial_port_name, O_RDWR);
   struct termios tty;
   if(tcgetattr(serial_port, &tty) != 0) {
       red();
       printf("Error %i from tcgetattr: %s\n", errno, strerror(errno));
       normal();
       return 1;
+  }
+  else {
+      green();
+      printf("UART %s opened.. ", serial_port_name);
+      normal();
   }
 
   tty.c_cflag &= ~PARENB; // Clear parity bit, disabling parity (most common)
@@ -57,9 +62,7 @@ int serial_initialize() {
 
   // Save tty settings, also checking for error
   if (tcsetattr(serial_port, TCSANOW, &tty) != 0) {
-      red();
       printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
-      normal();
       return 1;
   }
   return 0;
@@ -72,7 +75,7 @@ void *serial_listen(void *vargp)
     normal();
         FILE *fp = fopen ("/Users/diego/pic.jpg","w");
     while(true) {
-        unsigned char read_buffer[pkt_size];
+        uint8_t read_buffer[pkt_size];
         bytes_read = read(serial_port,&read_buffer,pkt_size);
         time_human();
         char preview[128] = {"%s - UART: %d - %02X %02X %02X %02X \n"};

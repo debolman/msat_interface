@@ -29,8 +29,8 @@
 #include "serial.c"
 #include "TCP.c"
 #include "UDP.c"
-#include <mysql.h>
-#include "mysql.c"
+//#include <mysql.h>
+//#include "mysql.c"
 
 unsigned long long  unix_milliseconds() {
     struct timeval tv;
@@ -64,13 +64,11 @@ void normal() {printf("%s", KNRM);}
 void *file_management() {
     printf("open \n");
     int file  =open("pic.jpg", O_RDONLY );
-    unsigned char buffer_file[pkt_size];
-    buffer_file[0] = 57;
-    printf("read \n");
-    for(int n =0;n<40000;n++) {
-        int letti = read(file,buffer_file+1,pkt_size-1);
-        UDP_send(buffer_file,pkt_size);
-        usleep(10000);
+    unsigned char buffer_file[128];
+    for(int n =0;n<600000;n++) {
+        int letti = read(file,buffer_file,128);
+        UDP_send(buffer_file,128);
+        usleep(20000);
         printf("%d %02X %02X %02X\n",n, buffer_file[0], buffer_file[1], buffer_file[2]);
     }
     printf("end \n");
@@ -89,8 +87,8 @@ int main(void) {
     if (TCP_server_activate) pthread_create(&tcp_serv_thread, NULL, tcp_serv_conn, NULL);
     if (TCP_client_activate) pthread_create(&tcp_cli_thread, NULL, tcp_cli, NULL);
     //if (mysql_activate) pthread_create(&mysql_thread, NULL, mysql_log, NULL);
-    if (mysql_activate) mysql_connection();
-    if (mysql_activate) pthread_join(mysql_thread, NULL);
+    //if (mysql_activate) mysql_connection();
+    //if (mysql_activate) pthread_join(mysql_thread, NULL);
     if (TCP_client_activate) pthread_join(tcp_cli_thread, NULL);
     if (TCP_server_activate) pthread_join(tcp_serv_thread, NULL);;
     if (serial_activate) pthread_join(serial_thread, NULL);

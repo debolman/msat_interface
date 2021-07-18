@@ -24,12 +24,15 @@ void *UDP_listener(void *vargp)
     green();
     printf(" and listening on port %d\n", UDP_serv_port);
     normal();
-        FILE *fp = fopen ("/Users/diego/pic.jpg","w");
+        //FILE *fp = fopen ("/Users/diego/pic.jpg","w");
     while(true) {
         socklen_t len;
         int UDP_recved_len = recvfrom(UDP_socket, UDP_buffer, sizeof(UDP_buffer), 0, (struct sockaddr*)&rem_addr,&len);
         if(UDP_recved_len>0) {
-            printf("UDP: %d %02X %02X %02X \n",  UDP_recved_len, UDP_buffer[0], UDP_buffer[1], UDP_buffer[2]);
+            time_human();
+        char preview[128] = {"%s - UDP: %d - %02X %d %02X %02X \n"};
+        sprintf(print_buffer,preview, time_string, UDP_recved_len, UDP_buffer[0], UDP_buffer[1], UDP_buffer[2], UDP_buffer[3]);
+        printf("%s",print_buffer);
         
             //UDP_send_f(udp_buffer,UDP_recved_len);
             
@@ -51,20 +54,20 @@ void *UDP_listener(void *vargp)
             		}
 		
             }
-                if(UDP_buffer[0] == 0x11) {
-                    printf("dect \n");
-                    if(UDP_buffer[1] == 1) {
-                        fclose(fp);
-                        printf("closed \n");
-                        usleep(10000);
-                        printf("opened\n");
-                        fp = fopen ("/Users/diego/pic.jpg","w");
-                    }
-                }
-            if(UDP_buffer[0] == 0x57 ) { //0x30) {
-                memcpy(&bufer, &UDP_buffer[4],UDP_recved_len-4);
-                fwrite(bufer,1, UDP_recved_len-4, fp);
-            }
+            //     if(UDP_buffer[0] == 0x11) {
+            //         printf("dect \n");
+            //         if(UDP_buffer[1] == 1) {
+            //             fclose(fp);
+            //             printf("closed \n");
+            //             usleep(10000);
+            //             printf("opened\n");
+            //             fp = fopen ("/Users/diego/pic.jpg","w");
+            //         }
+            //     }
+            // if(UDP_buffer[0] == 0x57 ) { //0x30) {
+            //     memcpy(&bufer, &UDP_buffer[4],UDP_recved_len-4);
+            //     fwrite(bufer,1, UDP_recved_len-4, fp);
+            // }
         }
         }
         
@@ -102,8 +105,8 @@ void UDP_send(unsigned char *hello, int leng) {
     struct sockaddr_in dest_addr;
     bzero(&dest_addr, sizeof(dest_addr));
     dest_addr.sin_family = AF_INET;
-    dest_addr.sin_port = htons(7072);
-    dest_addr.sin_addr.s_addr = inet_addr("192.168.3.56");
+    dest_addr.sin_port = htons(1234);
+    dest_addr.sin_addr.s_addr = inet_addr("192.168.3.23");
     sendto(UDP_socket, (const char *)hello, leng, 0, (const struct sockaddr *) &dest_addr, sizeof(dest_addr));
 }
 

@@ -28,7 +28,7 @@
 #include <stdbool.h>
 
 bool  serial_activate =       true;
-bool  UDP_activate   =        false;
+bool  UDP_activate   =        true;
 bool  mysql_activate =        false;
 bool  file_activate  =        false;
 bool  TCP_server_activate  =    false;
@@ -40,14 +40,14 @@ bool TCP_raw = false;
 
 #define MYSQL_act_marco
 //#define MAXEVENTS 64
-#define pkt_size  100
+#define pkt_size  128
 #define serial_baudrate B230400
-#define UDP_serv_port 1235
+#define UDP_serv_port 1234
 #define TCP_serv_port 8082
 #define TCP_dest_port 8082
 
-#include <mysql.h>
-MYSQL *con;
+//#include <mysql.h>
+//MYSQL *con;
 
 char hostbuffer[] = "debolman.ns0.it";
 char TCP_dest_addr[] = "10.8.0.1";
